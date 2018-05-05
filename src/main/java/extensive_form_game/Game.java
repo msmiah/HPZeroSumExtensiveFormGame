@@ -140,8 +140,6 @@ public class Game implements GameGenerator {
 	
 	private boolean hasAbstraction;
 	private int[][] abstraction; 
-	private int[][][] actionAbstractionMapping;
-	private boolean useIdentityActionMap;
 
 	
 	public Game() {
@@ -246,20 +244,6 @@ public class Game implements GameGenerator {
 		}
 	}
 	
-	private void readSignalTreeLine(String[] split_line) {
-		numRounds = Integer.parseInt(split_line[1]);
-		depth = 2 * Integer.parseInt(split_line[2]) + Integer.parseInt(split_line[3]);
-		numPrivateSignals = Integer.parseInt(split_line[2]);
-	}
-	
-	private void readSignalsLine(String[] split_line) {
-		signals = new String[split_line.length-1];
-		for (int i = 1; i < split_line.length; i++) {
-			signals[i-1] = split_line[i];
-			signalNameToId.put(split_line[i], i-1);
-		}
-	}
-	
 	// CreateLeafNode handles both Zerosum format files, and the more heavily annotated files of this package
 	private void CreateLeafNode(String[] line) {
 		Node node = new Node();
@@ -267,14 +251,14 @@ public class Game implements GameGenerator {
 		node.nodeId = Integer.parseInt(line1);
 		node.name = line[0];
 		node.player = -2;
-		node.value = Double.parseDouble(line[6]);
+		node.value = Double.parseDouble(line[7]);
 		if (node.value < smallestPayoff) {
 			smallestPayoff = node.value;
 		}
 		if (node.value > biggestPayoff) {
 			biggestPayoff = node.value;
 		}
-		
+		//System.out.println("Node val:" + node.value);
 		nodes[node.nodeId] = node;
 	}
 
@@ -283,29 +267,33 @@ public class Game implements GameGenerator {
 		Node node = new Node();
 		String line1 = line[1].replace("\"", "");
 		node.nodeId = Integer.parseInt(line1);
-		node.player = Integer.parseInt(line[2]) ;
+		node.player = Integer.parseInt(line[2]);
 		node.informationSet = Integer.parseInt(line[3]);
-		System.out.println("Player: " + (node.player-1) + ", info set: " + node.informationSet);
+		//System.out.println("Player: " + (node.player-1) + ", info set: " + node.informationSet);
 		if (node.informationSet < smallestInformationSetId[node.player-1]) {
 			smallestInformationSetId[node.player-1] = node.informationSet;
 		}
 		
 		node.name = line[0];
 		//System.out.println("Player: " + (node.player-1) + ", info set: " + node.informationSet);
-		informationSets[node.player-1][node.informationSet].add(node.nodeId);
+		//informationSets[node.player-1][node.informationSet].add(node.nodeId);
 		
-		int numActions = line.length-7;
+		int numActions = line.length-8;
 		node.actions = new Action[numActions];
 		for (int i = 0; i < numActions; i++) {
-			if (!informationSetsSeen[node.player-1][node.informationSet]) {
+			/*if (!informationSetsSeen[node.player-1][node.informationSet]) {
 				numSequences[node.player-1]++;
-			}
+			}else {
+				System.out.println("Information already seen");
+			}*/
+			numSequences[node.player-1]++;
 			Action action = new Action();
-			action.name = line[6+i];
-			//action.childId = Integer.parseInt(line[6+2*i]);
+			action.name = line[6+i].replace("\"", "");
+			System.out.println("action name = " + action.name);
+			action.childId = node.nodeId + i + 1;
 			node.actions[i] = action;
 		}
-		
+		informationSets[node.player-1][node.informationSet].add(node.nodeId);
 		informationSetsSeen[node.player-1][node.informationSet] = true;
 		nodes[node.nodeId] = node;
 	}
@@ -381,7 +369,7 @@ public class Game implements GameGenerator {
 		Node node = new Node();
 		String line1 = line[1].replace("\"", "");
 		node.nodeId = Integer.parseInt(line1);
-		System.out.println("Node" + node.nodeId);
+		//System.out.println("Node" + node.nodeId);
 		node.name = line[0];
 		node.player = 0;
 		int numActions = line.length - 7;
@@ -390,9 +378,9 @@ public class Game implements GameGenerator {
 		double sum = 0;
 		for (int i = 0; i < numActions/2; i++) {
 			Action action = new Action();
-			action.name = line[5+i];
-			//action.childId = Integer.parseInt(line[4+3*i]);
-			System.out.println(line[(3+i)*2]);
+			action.name = line[((3+i)*2)-1].replace("\"", "");
+			action.childId = i*7 + 1;
+			System.out.println(action.name);
 			action.probability = Double.parseDouble(line[(3+i)*2]);
 			sum += action.probability;
 			node.actions[i] = action;			
@@ -401,9 +389,8 @@ public class Game implements GameGenerator {
 			node.actions[i].probability = (double) node.actions[i].probability / sum;
 		}
 		// the root node is the empty history
-		if (node.name.equals("/")) {
-			root = node.nodeId;
-		}
+	
+		root = node.nodeId;
 		nodes[node.nodeId] = node;
 	}
 
@@ -448,37 +435,6 @@ public class Game implements GameGenerator {
 	// ZERO: This option places expected value of zero on all nodes in a probability 0 subtree
 	// UNIFORM: This option uses uniform probabilities
 	private enum ZeroBranchOption {ZERO, UNIFORM} // TODO: implement UNIFORM option
-	/*private double fillExpectedValueArrayRecursive(double[] array, int currentNode, TObjectDoubleMap<String>[] strategyP1, TObjectDoubleMap<String>[] strategyP2, boolean negateValues, ZeroBranchOption zeroBranchOption, boolean inZeroBranch) {
-		Node node = nodes[currentNode];
-		//biggestPayoff = 0;
-		//smallestPayoff = 0;
-		if (node.isLeaf()) {
-			if (inZeroBranch) {
-				//array[currentNode] = 0;
-				array[currentNode] = negateValues ? -node.getValue() + biggestPayoff: node.getValue() - smallestPayoff;
-			}
-			else {
-				array[currentNode] = negateValues ? -node.getValue() + biggestPayoff: node.getValue() - smallestPayoff;
-			}
-			return array[currentNode];
-		}
-
-		
-		array[currentNode] = 0;
-		for(Action action : node.actions) {
-			double probability = 0;
-			if (node.getPlayer() == 0) {
-				probability = action.getProbability();
-			} else if (node.getPlayer() == 1){
-				probability = strategyP1[node.getInformationSet()].get(action.getName());
-			} else {
-				probability = strategyP2[node.getInformationSet()].get(action.getName());
-			}
-			probability = inZeroBranch ? 0 : probability;
-			array[currentNode] += probability * fillExpectedValueArrayRecursive(array, action.childId, strategyP1, strategyP2, negateValues, zeroBranchOption, probability == 0);
-		}
-		return array[currentNode];
-	}*/
 
 	private double fillExpectedValueArrayRecursive(double[] array, int currentNode, TObjectDoubleMap<String>[] strategyP1, TObjectDoubleMap<String>[] strategyP2, boolean negateValues, ZeroBranchOption zeroBranchOption, boolean inZeroBranch, NormalDistribution distribution) {
 		Node node = nodes[currentNode];
@@ -526,11 +482,12 @@ public class Game implements GameGenerator {
 	}
 
 	public int getNumActionsAtInformationSet(int player, int informationSetId) {
-		return nodes[informationSets[player-1][informationSetId].get(0)].getActions().length;
+		System.out.println(player + "  : " + informationSetId);
+		return nodes[informationSets[player][informationSetId].get(0)].getActions().length;
 	}
 
 	public Action[] getActionsAtInformationSet(int player, int informationSetId) {
-		return nodes[informationSets[player-1][informationSetId].get(0)].getActions();
+		return nodes[informationSets[player][informationSetId].get(0)].getActions();
 	}
 	
 	public int getNumActionsForNature(GameState gs) {
