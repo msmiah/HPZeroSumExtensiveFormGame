@@ -289,10 +289,15 @@ public class Game implements GameGenerator {
 			numSequences[node.player-1]++;
 			Action action = new Action();
 			action.name = line[6+i].replace("\"", "");
-			System.out.println("action name = " + action.name);
-			action.childId = node.nodeId + i + 1;
+			//System.out.println("action name = " + action.name);
+			if(node.player == 1) {
+				action.childId = node.nodeId + (i*3) + 1;
+			}
+			else
+				action.childId = node.nodeId + i + 1;
 			node.actions[i] = action;
 		}
+		
 		informationSets[node.player-1][node.informationSet].add(node.nodeId);
 		informationSetsSeen[node.player-1][node.informationSet] = true;
 		nodes[node.nodeId] = node;
@@ -380,7 +385,7 @@ public class Game implements GameGenerator {
 			Action action = new Action();
 			action.name = line[((3+i)*2)-1].replace("\"", "");
 			action.childId = i*7 + 1;
-			System.out.println(action.name);
+			//System.out.println(action.name);
 			action.probability = Double.parseDouble(line[(3+i)*2]);
 			sum += action.probability;
 			node.actions[i] = action;			
@@ -482,12 +487,12 @@ public class Game implements GameGenerator {
 	}
 
 	public int getNumActionsAtInformationSet(int player, int informationSetId) {
-		System.out.println(player + "  : " + informationSetId);
-		return nodes[informationSets[player][informationSetId].get(0)].getActions().length;
+		//System.out.println(player + "  : " + informationSets[player-1][informationSetId].get(0));
+		return nodes[informationSets[player-1][informationSetId].get(0)].getActions().length;
 	}
 
 	public Action[] getActionsAtInformationSet(int player, int informationSetId) {
-		return nodes[informationSets[player][informationSetId].get(0)].getActions();
+		return nodes[informationSets[player-1][informationSetId].get(0)].getActions();
 	}
 	
 	public int getNumActionsForNature(GameState gs) {
