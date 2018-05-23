@@ -110,6 +110,7 @@ public class Game implements GameGenerator {
 	
 	int player1 = 0;
 	int player2 = 1;
+	int parentInfoSet;
 	
 	private TIntArrayList [] [] informationSets; // indexed as [player][information set]
 	private boolean [] [] informationSetsSeen; // indexed as [player]
@@ -269,6 +270,8 @@ public class Game implements GameGenerator {
 		node.nodeId = Integer.parseInt(line1);
 		node.player = Integer.parseInt(line[2]);
 		node.informationSet = Integer.parseInt(line[3]);
+		if(node.player == 1)
+			parentInfoSet = node.informationSet;
 		//System.out.println("Player: " + (node.player-1) + ", info set: " + node.informationSet);
 		if (node.informationSet < smallestInformationSetId[node.player-1]) {
 			smallestInformationSetId[node.player-1] = node.informationSet;
@@ -297,9 +300,10 @@ public class Game implements GameGenerator {
 				action.childId = node.nodeId + i + 1;
 			node.actions[i] = action;
 		}
-		
-		informationSets[node.player-1][node.informationSet].add(node.nodeId);
-		informationSetsSeen[node.player-1][node.informationSet] = true;
+
+			informationSets[node.player - 1][node.informationSet].add(node.nodeId);
+			informationSetsSeen[node.player - 1][node.informationSet] = true;
+
 		nodes[node.nodeId] = node;
 	}
 	
@@ -487,7 +491,7 @@ public class Game implements GameGenerator {
 	}
 
 	public int getNumActionsAtInformationSet(int player, int informationSetId) {
-		//System.out.println(player + "  : " + informationSets[player-1][informationSetId].get(0));
+		//System.out.println(player + "  : " + informationSetId);
 		return nodes[informationSets[player-1][informationSetId].get(0)].getActions().length;
 	}
 

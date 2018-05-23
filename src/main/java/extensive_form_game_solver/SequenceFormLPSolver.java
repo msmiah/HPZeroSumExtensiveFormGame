@@ -160,15 +160,15 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
     @Override
     public void solveGame() {
         try {
-        	System.out.println("Test solveGame()");
+        	System.out.println(" Length " + strategyVarsBySequenceId.length );
         	
             if (cplex.solve()) {
-                for (int i = 0; i < strategyVarsBySequenceId.length; i++) {
+                for (int i = 0; i < strategyVarsBySequenceId.length-1; i++) {
                   System.out.println("Sequence = " + strategyVarsBySequenceId[i]);
                   IloNumVar v = strategyVarsBySequenceId[i];
                   //System.out.println("Cplex val : " + cplex.getValue(v));
                   }
-                //strategyVars = cplex.getValues(strategyVarsBySequenceId);
+              //  strategyVars = cplex.getValues(strategyVarsBySequenceId);
                 //valueOfGame = -cplex.getObjValue();
             }
         } catch (IloException e) {
@@ -386,7 +386,7 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
                 if (playerToSolveFor ==1) primalSequenceNames[numSequencesP1-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
                 else dualSequenceNames[numSequencesP1-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
             } else if (node.getPlayer() == 2 && !visitedP2.contains(node.getInformationSet())) {
-            	 // System.out.println("Sequence player 2: " + Integer.toString(node.getInformationSet()) + ";" + action.getName());
+            	//System.out.println("Sequence player 2: " + Integer.toString(node.getInformationSet()) + ";" + action.getName());
                 sequenceIdByInformationSetAndActionP2[node.getInformationSet()].put(action.getName(), numSequencesP2++);
                if (playerToSolveFor == 2) primalSequenceNames[numSequencesP2-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
                else dualSequenceNames[numSequencesP2-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
@@ -667,7 +667,7 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
         double[][][] profile = new double[3][][];
         profile[playerToSolveFor] = new double [numPrimalInformationSets][];
         //player two has 15 information set thats why minus 2 added
-        for (int informationSetId = 0; informationSetId < numPrimalInformationSets-2; informationSetId++) {
+        for (int informationSetId = 0; informationSetId < numPrimalInformationSets-1; informationSetId++) {
             profile[playerToSolveFor][informationSetId] = new double[game.getNumActionsAtInformationSet(playerToSolveFor, informationSetId)];
             double sum = 0;
             for (String actionName : strategyVarsByInformationSet[informationSetId].keySet()) {
@@ -682,11 +682,12 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
                 String actionName = game.getActionsAtInformationSet(playerToSolveFor, informationSetId)[actionId].getName();
                 try {
                     if (sum > 0) {
+                    	//System.out.println("Test" + actionName);
                         profile[playerToSolveFor][informationSetId][actionId] = cplex.getValue(strategyVarsByInformationSet[informationSetId].get(actionName)) / sum;
                     } else {
                         profile[playerToSolveFor][informationSetId][actionId] = 1.0 / game.getNumActionsAtInformationSet(playerToSolveFor, informationSetId);
                     }
-                    System.out.println("Cplex val : " + profile[playerToSolveFor][informationSetId][actionId]);
+                  //  System.out.println("Cplex val : "+ informationSetId+ " : " + informationSetId + "  = "+ profile[playerToSolveFor][informationSetId][actionId]);
                 } catch (IloException e) {
                     e.printStackTrace();
                 }

@@ -145,6 +145,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 					IloNumVar v = strategyVarsBySequenceId[i];
 					cplex.getValue(v);
 				}*/
+				System.out.println("Strategy ID :" + strategyVarsBySequenceId);
 				strategyVars = cplex.getValues(strategyVarsBySequenceId);
 				valueOfGame = playerToSolveFor == player1 ? cplex.getObjValue() : -cplex.getObjValue();
 			}
@@ -384,7 +385,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 	 */
 	private void CreateSequenceFormIds(int currentNodeId, TIntSet visitedP1, TIntSet visitedP2) {
 		Node node = game.getNodeById(currentNodeId);
-		if (node.isLeaf()) return;
+		if (node.isLeaf() || null == node) return;
 		
 		for (Action action : node.getActions()) {
 			if (node.getPlayer() == 1 && !visitedP1.contains(node.getInformationSet())) {
@@ -398,7 +399,8 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 					primalSequenceNames[numSequencesP2-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
 				}
 			}
-			CreateSequenceFormIds(action.getChildId(), visitedP1, visitedP2);
+			if(action != null)
+				CreateSequenceFormIds(action.getChildId(), visitedP1, visitedP2);
 		}		
 		if (node.getPlayer() == 1) {
 			visitedP1.add(node.getInformationSet());
@@ -447,7 +449,8 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 					CreateSequenceFormVariablesAndConstraints(action.getChildId(), v, visited, probability);
 				} else {
 					double newProbability = getProbabilityOfAction(node, actionId) * probability;
-					CreateSequenceFormVariablesAndConstraints(action.getChildId(), parentSequence, visited, newProbability);
+					if(action != null) // sujan
+						CreateSequenceFormVariablesAndConstraints(action.getChildId(), parentSequence, visited, newProbability);
 				}
 			}
 		}
@@ -455,8 +458,14 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 	
 	private double getProbabilityOfAction(Node node, int actionId) {
 		if (node.getPlayer() == nature) {
+			//System.out.println(" getProbabilityOfAction" + actionId);
+			if(actionId > 15)
+				return  1;
 			return node.getActions()[actionId].getProbability();
 		} else if (node.getPlayer() == playerNotToSolveFor){
+			//System.out.println(node.getInformationSet() + " getProbabilityOfAction" + actionId);
+			if(node.getInformationSet() == 16)
+				return  1;
 			return opponentStrategy[node.getInformationSet()][actionId];
 		} else {
 			System.out.println("BestResponseLPSolver::getProbabilityOfAction error: tried to get probability of playerToSolveFor action");
