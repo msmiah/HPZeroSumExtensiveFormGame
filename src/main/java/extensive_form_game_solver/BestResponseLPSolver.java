@@ -369,7 +369,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 		assert(numSequencesP2 == game.getNumSequencesP2());
 		
 		// create root sequence var
-		IloNumVar rootSequence = cplex.numVar(1, 1, "Xroot");
+		IloNumVar rootSequence = cplex.numVar(1, 1, "Iroot");
 		strategyVarsBySequenceId[0] = rootSequence;
 		CreateSequenceFormVariablesAndConstraints(game.getRoot(), rootSequence, new TIntHashSet(), 1);
 		
@@ -430,7 +430,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 			//sum.addTerm(-1, parentSequence);
 			for (Action action : node.getActions()) {
 				// real-valued variable in (0,1)
-				IloNumVar v = cplex.numVar(0, 1, "X" + node.getInformationSet() + action.getName());
+				IloNumVar v = cplex.numVar(0, 1, "I:" + node.getInformationSet() + " action: "+action.getName());
 				strategyVarsByInformationSet[node.getInformationSet()].put(action.getName(), v);
 				int sequenceId = getSequenceIdForPlayerToSolveFor(node.getInformationSet(), action.getName());
 				strategyVarsBySequenceId[sequenceId] = v;
