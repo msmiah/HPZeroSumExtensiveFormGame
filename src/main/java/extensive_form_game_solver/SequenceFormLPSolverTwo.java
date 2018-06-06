@@ -2,6 +2,7 @@ package extensive_form_game_solver;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import extensive_form_game.Game;
@@ -27,23 +28,26 @@ import ilog.cplex.IloCplex.UnknownObjectException;
 
 
 
-public class SequenceFormLPSolver extends ZeroSumGameSolver {
+public class SequenceFormLPSolverTwo<E> extends ZeroSumGameSolver {
     Game game;
 
     int playerToSolveFor;
     int playerNotToSolveFor;
 
     IloCplex cplex;
+    IloLinearNumExpr objective;
     //IloNumVar[] modelStrategyVars;
     IloNumVar[] dualVars; // indexed as [informationSetId]. Note that we expect information sets to be 1-indexed, but the code corrects for when this is not the case
     HashMap<String, IloNumVar>[] strategyVarsByInformationSet; // indexed as [inforationSetId][action.name]
 
     TIntList[] sequenceFormDualMatrix; // indexed as [dual sequence id][information set]
     TIntDoubleMap[] dualPayoffMatrix; // indexed as [dual sequence][primal sequence]
-
+    TIntDoubleMap[] primalPayoffMatrix; 
+    ArrayList sameInfosetAction;
     TObjectIntMap<String>[] sequenceIdByInformationSetAndActionP1; // indexed as [informationSetId][action.name]
     TObjectIntMap<String>[] sequenceIdByInformationSetAndActionP2; // indexed as [informationSetId][action.name]
     IloNumVar[] strategyVarsBySequenceId;
+    int [] realValueBySequenceId;
     int numSequencesP1;
     int numSequencesP2;
     int numPrimalSequences;
@@ -60,11 +64,11 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
     int[] sequenceIdForNodeP1; // indexed as [nodeId]. Returns the sequenceId of the last sequence belonging to Player 1 on the path to the node.
     int[] sequenceIdForNodeP2; // indexed as [nodeId]. Returns the sequenceId of the last sequence belonging to Player 2 on the path to the node.
 
-    public SequenceFormLPSolver(Game game, int playerToSolveFor) {
+    public SequenceFormLPSolverTwo(Game game, int playerToSolveFor) {
         this(game, playerToSolveFor, 1e-6);
     }
 
-    public SequenceFormLPSolver(Game game, int playerToSolveFor, double tol) {
+    public SequenceFormLPSolverTwo(Game game, int playerToSolveFor, double tol) {
         super(game);
         this.game = game;
         try {
@@ -75,7 +79,6 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
 
         this.playerToSolveFor = playerToSolveFor;
         this.playerNotToSolveFor = (playerToSolveFor % 2) + 1;
-
 
         initializeDataStructures();
         //modelStrategyVars = new ArrayList<IloNumVar>();
@@ -123,11 +126,18 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
 
         dualSequenceNames = new String[numDualSequences];
         primalSequenceNames = new String[numPrimalSequences];
+        sameInfosetAction = new ArrayList<E>();
+        
 
         dualPayoffMatrix = new TIntDoubleHashMap[numDualSequences];
+        primalPayoffMatrix = new TIntDoubleHashMap[numPrimalSequences];
         
         for (int i = 0; i < numDualSequences; i++) {
             dualPayoffMatrix[i] = new TIntDoubleHashMap();
+        }
+        
+        for (int i = 0; i < numPrimalSequences; i++) {
+        	primalPayoffMatrix[i] = new TIntDoubleHashMap();
         }
 
         // ensure that we have a large enough array for both the case where information sets start at 1 and 0
@@ -142,8 +152,10 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
 
         if (playerToSolveFor == 1) {
             strategyVarsBySequenceId = new IloNumVar[game.getNumSequencesP1()];
+            realValueBySequenceId = new int[game.getNumSequencesP1()];
         } else {
             strategyVarsBySequenceId = new IloNumVar[game.getNumSequencesP2()];
+            realValueBySequenceId = new int[game.getNumSequencesP2()];
         }
 
         primalConstraints = new TIntObjectHashMap<IloConstraint>();
@@ -164,11 +176,13 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
         	
             if (cplex.solve()) {
                 for (int i = 0; i < strategyVarsBySequenceId.length; i++) {
-                 // System.out.println("Sequence = " + strategyVarsBySequenceId[i]);
+                // System.out.println("Sequence = " + strategyVarsBySequenceId[i]);
                   IloNumVar v = strategyVarsBySequenceId[i];
+                 // if(v != null)
                   //System.out.println("Cplex val : " + cplex.getValue(v));
                   }
-              //  strategyVars = cplex.getValues(strategyVarsBySequenceId);
+                //for(int i = 0; i < 16; i++)
+               // System.out.println("Test y1 : " + cplex.getValue(dualVars[i]));
                 //valueOfGame = -cplex.getObjValue();
             }
         } catch (IloException e) {
@@ -351,6 +365,7 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
     private void setUpModel(double tol) throws IloException {
         setCplexParameters(tol);
 
+        objective = cplex.linearNumExpr();
         // The empty sequence is the 0'th sequence for each player
         numSequencesP1 = numSequencesP2 = 1;
         primalSequenceNames[0] = "root";
@@ -362,7 +377,9 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
         // create root sequence var
         IloNumVar rootSequence = cplex.numVar(1, 1, "I_root");
         strategyVarsBySequenceId[0] = rootSequence;
-        CreateSequenceFormVariablesAndConstraints(game.getRoot(), rootSequence, new TIntHashSet());
+        
+        
+        CreateSequenceFormVariablesAndConstraints(game.getRoot(), rootSequence, new TIntHashSet(),1);
 
         CreateDualVariablesAndConstraints();
 
@@ -379,24 +396,25 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
     private void CreateSequenceFormIds(int currentNodeId, TIntSet visitedP1, TIntSet visitedP2) {
     	//System.out.println(currentNodeId);
         Node node = game.getNodeById(currentNodeId);
-        if (null == node || node.isLeaf()) return;
+        if (node.isLeaf()) return;
 
         for (Action action : node.getActions()) {
+        	//System.out.println(action +" p :" + node.getPlayer());
             if (node.getPlayer() == 1 && !visitedP1.contains(node.getInformationSet())) {
                 sequenceIdByInformationSetAndActionP1[node.getInformationSet()].put(action.getName(), numSequencesP1++);
                // System.out.println("Sequence player 1: " + Integer.toString(node.getInformationSet()) + ";" + action.getName());
                 if (playerToSolveFor ==1) primalSequenceNames[numSequencesP1-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
                 else dualSequenceNames[numSequencesP1-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
             } else if (node.getPlayer() == 2 && !visitedP2.contains(node.getInformationSet())) {
-            	//System.out.println("Sequence player 2: " + Integer.toString(node.getInformationSet()) + ";" + action.getName());
+            	System.out.println("Sequence player 2: " + Integer.toString(node.getInformationSet()) + ";" + action.getName());
                 sequenceIdByInformationSetAndActionP2[node.getInformationSet()].put(action.getName(), numSequencesP2++);
                if (playerToSolveFor == 2) primalSequenceNames[numSequencesP2-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
                else dualSequenceNames[numSequencesP2-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
             }
-            if(action != null)
             	CreateSequenceFormIds(action.getChildId(), visitedP1, visitedP2);
         }
         if (node.getPlayer() == 1) {
+        	//System.out.println("Info set : " + node.getInformationSet());
             visitedP1.add(node.getInformationSet());
         } else if (node.getPlayer() == 2) {
             visitedP2.add(node.getInformationSet());
@@ -410,9 +428,17 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
      * @param visited keeps track of which information sets have been visited
      * @throws IloException
      */
-    private void CreateSequenceFormVariablesAndConstraints(int currentNodeId, IloNumVar parentSequence, TIntSet visited) throws IloException{
+    private void CreateSequenceFormVariablesAndConstraints(int currentNodeId, IloNumVar parentSequence, TIntSet visited, double natureProbability) throws IloException{
         Node node = game.getNodeById(currentNodeId);
-        if (null == node || node.isLeaf()) return;
+        if (null == node) return;
+       
+        if (node.isLeaf()) { // Added for test sujan
+			double value = playerToSolveFor == player1 ? -node.getValue() : node.getValue();
+			//System.out.println("Val :" + natureProbability * value);
+			//objective.addTerm(natureProbability * value, parentSequence);
+			//System.out.println("obj :" + objective);
+			return;
+		}
 
         if (node.getPlayer() == playerToSolveFor && !visited.contains(node.getInformationSet())) {
             visited.add(node.getInformationSet()); 
@@ -424,27 +450,46 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
                 
                 strategyVarsByInformationSet[node.getInformationSet()].put(action.getName(), v);
                 int sequenceId = getSequenceIdForPlayerToSolveFor(node.getInformationSet(), action.getName());
-               cplex.output().println("SequenceID = " + sequenceId + " var =  " + v);
+                int val = node.getInformationSet() >> 2;
+                //cplex.output().println("SequenceID = " + sequenceId + "val " + val +  "Prob :"  + natureProbability);
                 strategyVarsBySequenceId[sequenceId] = v;
+                realValueBySequenceId[sequenceId] = node.getInformationSet();
                 // add 1*v to the sum over all the sequences at the information set
                 sum.addTerm(1, v);
-                CreateSequenceFormVariablesAndConstraints(action.getChildId(), v, visited);
+                //System.out.println("Child val" + game.getNodeById(action.getChildId()).getValue());
+                CreateSequenceFormVariablesAndConstraints(action.getChildId(), v, visited, natureProbability);
             }
             // sum_{sequences} = parent_sequence. cplex.addEq returns a reference to the range object describing the constraint. This is useful for dynamically modifying the model in derived classes.
-            //System.out.println("parentSequence :" + parentSequence + " sum : " + sum);
-           // primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, parentSequence,"Primal"+node.getInformationSet()));
-            primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, 1));
+          // System.out.println("parentSequence :" + parentSequence + " sum : " + sum);
+           primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, parentSequence,"Primal"+node.getInformationSet()));
+            // primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, 1));
         } else {
-            for (Action action : node.getActions()) {
-                if (node.getPlayer() == playerToSolveFor) {
-                    // update parentSequence to be the current sequence
-                    IloNumVar v = strategyVarsByInformationSet[node.getInformationSet()].get(action.getName());
-                    if(null != action)
-                    	CreateSequenceFormVariablesAndConstraints(action.getChildId(), v, visited);
-                } else {
-                	if(null != action)
-                    	CreateSequenceFormVariablesAndConstraints(action.getChildId(), parentSequence, visited);
-                }
+			for (Action action : node.getActions()) {
+
+				if (null != action) {
+					double newNatureProbability = node.getPlayer() == 0 ? natureProbability * action.getProbability()
+							: natureProbability;
+					if (node.getPlayer() == playerToSolveFor) {
+						// update parentSequence to be the current sequence
+						IloNumVar v = strategyVarsByInformationSet[node.getInformationSet()].get(action.getName());
+						if (null != action) {
+							
+							CreateSequenceFormVariablesAndConstraints(action.getChildId(), v, visited,
+									newNatureProbability);
+						}
+					} else {
+						if (null != action) {
+							if(node.getPlayer() == playerNotToSolveFor) {
+								int realVal = node.getInformationSet() >> 2;
+        						realVal++;
+                                //System.out.println("Real val :" + realVal);
+        						objective.addTerm(natureProbability * realVal, parentSequence);
+        						//System.out.println(objective);
+							}
+							CreateSequenceFormVariablesAndConstraints(action.getChildId(), parentSequence, visited,
+									newNatureProbability);}
+					}
+				}
             }
         }
     }
@@ -459,13 +504,14 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
         }
         String[] names = new String[numVars];
         for (int i = 0; i < numVars; i++) { names[i] = "Y" + i;}
-        this.dualVars = cplex.numVarArray(numVars, -Double.MAX_VALUE, Double.MAX_VALUE, names);
-
+          //this.dualVars = cplex.numVarArray(numVars, -Double.MAX_VALUE, Double.MAX_VALUE, names);
+          this.dualVars = cplex.numVarArray(numVars, 0, 1, names);
 
         InitializeDualSequenceMatrix();
         InitializeDualPayoffMatrix();
         for (int sequenceId = 0; sequenceId < numDualSequences; sequenceId++) {
-            CreateDualConstraintForSequence(sequenceId);
+           // CreateDualConstraintForSequence(sequenceId);
+            CreatePrimalConstraintForSequence(sequenceId);
         }
     }
 
@@ -505,22 +551,28 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
 
     }
 
-    private void InitializeDualPayoffMatrix() {
-        InitializeDualPayoffMatrixRecursive(game.getRoot(), 0, 0, 1);     // Start with the root sequences
+    private void InitializeDualPayoffMatrix() throws IloException {
+       // InitializeDualPayoffMatrixRecursive(game.getRoot(), 0, 0, 1);     // Start with the root sequences
+        InitializePrimalPayoffMatrixRecursive(game.getRoot(), 0, 0, 1);     // Start with the root sequences
     }
 
-    private void InitializeDualPayoffMatrixRecursive(int currentNodeId, int primalSequence, int dualSequence, double natureProbability) {
+    private void InitializeDualPayoffMatrixRecursive(int currentNodeId,int primalSequence, int dualSequence, double natureProbability) throws IloException{
         Node node = this.game.getNodeById(currentNodeId);
         if(null == node)
         	return;
+        
+       // System.out.println(node.getName()+"Infoset :" +node.getInformationSet() );
 
         if (node.isLeaf()) {
             int valueMultiplier = playerToSolveFor == 1? -1 : 1;
-            System.out.println("Current node : " + currentNodeId + "Primal seq : " + primalSequence + " Dual seq " + dualSequence);
+            //System.out.println("Current node : " + currentNodeId + "Primal seq : " + primalSequence + " Dual seq " + dualSequence);
             double leafValue = valueMultiplier * natureProbability * node.getValue();
+           // System.out.println("leaf node val :" + node.getValue());
             if (dualPayoffMatrix[dualSequence].containsKey(primalSequence)) {
+            	//System.out.println("A:" +primalSequence  );
                 dualPayoffMatrix[dualSequence].put(primalSequence, leafValue + dualPayoffMatrix[dualSequence].get(primalSequence));
             } else {
+            	//System.out.println(primalSequence );
                 dualPayoffMatrix[dualSequence].put(primalSequence, leafValue);
             }
         } else {
@@ -534,38 +586,93 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
 							: dualSequence;
 					double newNatureProbability = node.getPlayer() == 0 ? natureProbability * action.getProbability()
 							: natureProbability;
-					InitializeDualPayoffMatrixRecursive(action.getChildId(), newPrimalSequence, newDualSequence,
+					InitializeDualPayoffMatrixRecursive(action.getChildId(),newPrimalSequence, newDualSequence,
 							newNatureProbability);
 				}
             }
         }
     }
+    
+    private void InitializePrimalPayoffMatrixRecursive(int currentNodeId,int primalSequence, int dualSequence, double natureProbability) throws IloException{
+        Node node = this.game.getNodeById(currentNodeId);
+        if(null == node)
+        	return;
+        
+
+        if (node.isLeaf()) {
+            int valueMultiplier = playerToSolveFor == 1? -1 : 1;
+           // System.out.println("Current node : " + currentNodeId + "Primal seq : " + primalSequence + " Dual seq " + dualSequence);
+            double leafValue = valueMultiplier * node.getValue();
+           // System.out.println("leaf node val :" + node.getValue());
+            if (primalPayoffMatrix[dualSequence].containsKey(primalSequence)) {
+            	//System.out.println("A:" +primalSequence  );
+            	primalPayoffMatrix[dualSequence].put(primalSequence, leafValue + primalPayoffMatrix[dualSequence].get(primalSequence));
+            } else {
+            	//System.out.println(primalSequence );
+            	primalPayoffMatrix[dualSequence].put(primalSequence, leafValue);
+            }
+        } else {
+            for (Action action : node.getActions()) {
+				if (action != null) {
+					int newPrimalSequence = node.getPlayer() == playerToSolveFor
+							? getSequenceIdForPlayerToSolveFor(node.getInformationSet(), action.getName())
+							: primalSequence;
+					int newDualSequence = node.getPlayer() == playerNotToSolveFor
+							? getSequenceIdForPlayerNotToSolveFor(node.getInformationSet(), action.getName())
+							: dualSequence;
+					double newNatureProbability = node.getPlayer() == 0 ? natureProbability * action.getProbability()
+							: natureProbability;
+					InitializePrimalPayoffMatrixRecursive(action.getChildId(),newPrimalSequence, newDualSequence,
+							newNatureProbability);
+				}
+            }
+        }
+    }
+    
+    private void CreatePrimalConstraintForSequence(int sequenceId) throws IloException{
+    	
+    	if ( sequenceId == 0) return;
+        IloLinearNumExpr lhs = cplex.linearNumExpr();
+        TIntDoubleIterator it = primalPayoffMatrix[sequenceId].iterator();
+        for ( int i = primalPayoffMatrix[sequenceId].size(); i-- > 0; ) {
+            it.advance();
+            //System.out.println("Val mul : " + -it.value() + " Dual var " + strategyVarsBySequenceId[it.key()]);
+            lhs.addTerm(it.value(), strategyVarsBySequenceId[it.key()]);
+        }
+        
+        int val = realValueBySequenceId[sequenceId] >> 2;
+        System.out.println("exp for dual : " + lhs + "val : " + val );
+        dualConstraints.put(sequenceId, cplex.addGe(lhs, val+1 , "Dual"+sequenceId));
+    }
 
     private void CreateDualConstraintForSequence(int sequenceId) throws IloException{
         IloLinearNumExpr lhs = cplex.linearNumExpr();
+        //System.out.println("Seq id " + sequenceId);
         for (int i = 0; i < sequenceFormDualMatrix[sequenceId].size(); i++) {
             int informationSetId = sequenceFormDualMatrix[sequenceId].get(i);// + (1-game.getSmallestInformationSetId(playerNotToSolveFor)); // map information set ID to 1 indexing. Assumes that information sets are named by consecutive integers
             int valueMultiplier = i == 0? 1 : -1;
-            System.out.println("seq id : "+ sequenceId+ " Val mul : " + valueMultiplier + " Dual var " + dualVars[informationSetId]);
+            //System.out.println("seq id : "+ sequenceId+ " Val mul : " + valueMultiplier + " Dual var " + dualVars[informationSetId]);
+            //System.out.println("Test");
             lhs.addTerm(valueMultiplier, dualVars[informationSetId]);
         }
 
         //IloLinearNumExpr RCS = cplex.linearNumExpr();
+        //System.out.println("Size :" + dualPayoffMatrix[sequenceId].size() );
         TIntDoubleIterator it = dualPayoffMatrix[sequenceId].iterator();
         for ( int i = dualPayoffMatrix[sequenceId].size(); i-- > 0; ) {
             it.advance();
-            System.out.println("Val mul : " + -it.value() + " Dual var " + strategyVarsBySequenceId[it.key()]);
+            //System.out.println("Val mul : " + -it.value() + " Dual var " + strategyVarsBySequenceId[it.key()]);
             lhs.addTerm(-it.value(), strategyVarsBySequenceId[it.key()]);
         }
-
-
+         
+       // System.out.println("exp for dual : " + lhs);
         dualConstraints.put(sequenceId, cplex.addGe(lhs, 0, "Dual"+sequenceId));
     }
 
     /**
      * Fills in the convenience arrays nodeNatureProbabilities and sequenceIdForNodeP1/2
      */
-    void computeAuxiliaryInformationForNodes() {
+    void computeAuxiliaryInformationForNodes() { 
         computeAuxiliaryInformationForNodesRecursive(game.getRoot(), 0, 0, 1);
     }
     private void computeAuxiliaryInformationForNodesRecursive(int currentNodeId, int sequenceIdP1, int sequenceIdP2, double natureProbability) {
@@ -602,7 +709,9 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
 
 
     private void SetObjective() throws IloException {
-        cplex.addMinimize(cplex.prod(1, dualVars[0]));
+        //cplex.addMinimize(cplex.prod(1, dualVars[0]));
+    //	System.out.println("Object :" + objective);
+    	cplex.addMaximize(objective);
     }
 
 
@@ -680,24 +789,35 @@ public class SequenceFormLPSolver extends ZeroSumGameSolver {
             double sum = 0;
             for (String actionName : strategyVarsByInformationSet[informationSetId].keySet()) {
                 try {
-                	//System.out.println("Cplex val : " + cplex.getValue(strategyVarsByInformationSet[informationSetId].get(actionName)));
-                	
+                //System.out.println(strategyVarsByInformationSet[informationSetId].get(actionName) + ": " + cplex.getValue(strategyVarsByInformationSet[informationSetId].get(actionName)) );
+
                     sum += cplex.getValue(strategyVarsByInformationSet[informationSetId].get(actionName));
    
                 } catch (IloException e) {
                     e.printStackTrace();
                 }
             }
+            
+            
+            
+           // System.out.println("Sum : " + sum);
 
             for (int actionId = 0; actionId < game.getNumActionsAtInformationSet(playerToSolveFor, informationSetId); actionId++) {
                 String actionName = game.getActionsAtInformationSet(playerToSolveFor, informationSetId)[actionId].getName();
                 try {
+                	//System.out.println(informationSetId + "action" + actionId);
                     if (sum > 0) {
-                        profile[playerToSolveFor][informationSetId][actionId] = cplex.getValue(strategyVarsByInformationSet[informationSetId].get(actionName)) / sum;
+						if (!sameInfosetAction
+								.contains(strategyVarsByInformationSet[informationSetId].get(actionName))) {
+							sameInfosetAction.add(strategyVarsByInformationSet[informationSetId].get(actionName));
+							// System.out.println(strategyVarsByInformationSet[informationSetId].get(actionName));
+							profile[playerToSolveFor][informationSetId][actionId] = cplex
+									.getValue(strategyVarsByInformationSet[informationSetId].get(actionName)) / sum;
+						}
                     } else {
                         profile[playerToSolveFor][informationSetId][actionId] = 1.0 / game.getNumActionsAtInformationSet(playerToSolveFor, informationSetId);
                     }
-                  System.out.println(strategyVarsByInformationSet[informationSetId].get(actionName) + " :  " + profile[playerToSolveFor][informationSetId][actionId]);
+                System.out.println(strategyVarsByInformationSet[informationSetId].get(actionName) + " :  " + profile[playerToSolveFor][informationSetId][actionId]);
                 } catch (IloException e) {
                     e.printStackTrace();
                 }

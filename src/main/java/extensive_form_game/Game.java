@@ -19,7 +19,9 @@ import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 
 public class Game implements GameGenerator {
-	public class Action {
+	
+	public static final int numOfDefenderActions = 5;
+	public class Action {	
 		private String name;
 		private int childId; // id of the node lead to by taking this action
 		private double probability;
@@ -219,7 +221,7 @@ public class Game implements GameGenerator {
 	
 	
 	private void readGameInfoLine(String [] split_line) {
-		numNodes = 128;
+		numNodes = 257;
 		numInformationSetsPlayer1 = 17;
 		numInformationSetsPlayer2 = 17;
 		
@@ -292,12 +294,15 @@ public class Game implements GameGenerator {
 			numSequences[node.player-1]++;
 			Action action = new Action();
 			action.name = line[6+i].replace("\"", "");
-			//System.out.println("action name = " + action.name);
+			//System.out.println("action name = " + action.name + "info :" + node.informationSet);
 			if(node.player == 1) {
 				action.childId = node.nodeId + (i*3) + 1;
+				//System.out.println("node id : " + node.nodeId + "  child id:" + action.childId);
 			}
-			else
+			else {
 				action.childId = node.nodeId + i + 1;
+				//System.out.println("action name = " + action.name + "child id:" + action.childId);
+			}
 			node.actions[i] = action;
 		}
 
@@ -381,22 +386,26 @@ public class Game implements GameGenerator {
 		//System.out.println("Node" + node.nodeId);
 		node.name = line[0];
 		node.player = 0;
-		int numActions = line.length - 7;
+		int numActions = (line.length - 7)/2;
 		node.actions = new Action[numActions];
-		nodes = new Node[128]; // TODO programaticlly need to handle
+		nodes = new Node[numNodes]; // TODO programaticlly need to handle
 		double sum = 0;
-		for (int i = 0; i < numActions/2; i++) {
+		for (int i = 0; i < numActions; i++) {
 			Action action = new Action();
 			action.name = line[((3+i)*2)-1].replace("\"", "");
-			action.childId = i*7 + 1;
-			//System.out.println(action.name);
+			action.childId = i*((3*Game.numOfDefenderActions)+1) + 1;
+			//System.out.println(action.name + " child id : " + action.childId);
 			action.probability = Double.parseDouble(line[(3+i)*2]);
 			sum += action.probability;
-			node.actions[i] = action;			
+			node.actions[i] = action;		
+			//System.out.println("Prob :" + action.probability);
 		}
+		
+		
+		/*
 		for (int i = 0; i < numActions/2; i++) {
 			node.actions[i].probability = (double) node.actions[i].probability / sum;
-		}
+		}*/
 		// the root node is the empty history
 	
 		root = node.nodeId;

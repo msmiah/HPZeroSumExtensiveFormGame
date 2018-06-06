@@ -1,33 +1,81 @@
-Iroot: 	1.0
-I:0 action: 0001: 	1.0
-I:0 action: 0010: 	0.0
-I:1 action: 0000: 	1.0
-I:1 action: 0011: 	0.0
-I:2 action: 0011: 	0.0
-I:2 action: 0000: 	1.0
-I:3 action: 0010: 	1.0
-I:3 action: 0001: 	0.0
-I:4 action: 0101: 	1.0
-I:4 action: 0110: 	0.0
-I:5 action: 0100: 	1.0
-I:5 action: 0111: 	0.0
-I:6 action: 0111: 	1.0
-I:6 action: 0100: 	0.0
-I:7 action: 0110: 	0.0
-I:7 action: 0101: 	1.0
-I:8 action: 1001: 	0.0
-I:8 action: 1010: 	1.0
-I:9 action: 1000: 	1.0
-I:9 action: 1011: 	0.0
-I:10 action: 1011: 	1.0
-I:10 action: 1000: 	0.0
-I:11 action: 1010: 	1.0
-I:11 action: 1001: 	0.0
-I:12 action: 1101: 	1.0
-I:12 action: 1110: 	0.0
-I:13 action: 1100: 	0.0
-I:13 action: 1111: 	1.0
-I:14 action: 1111: 	1.0
-I:14 action: 1100: 	0.0
-I:15 action: 1110: 	1.0
-I:15 action: 1101: 	0.0
+Xroot: 	1.0
+I:0action:0000: 	1.0
+I:0action:0001: 	0.0
+I:0action:0010: 	0.0
+I:0action:0100: 	0.0
+I:0action:1000: 	0.0
+I:1action:0001: 	0.0
+I:1action:0000: 	0.0
+I:1action:0011: 	0.0
+I:1action:0101: 	1.0
+I:1action:1001: 	0.0
+I:2action:0010: 	0.0
+I:2action:0011: 	0.0
+I:2action:0000: 	0.0
+I:2action:0110: 	0.0
+I:2action:1010: 	1.0
+I:3action:0011: 	1.0
+I:3action:0010: 	0.0
+I:3action:0001: 	0.0
+I:3action:0111: 	0.0
+I:3action:1011: 	0.0
+I:4action:0100: 	0.0
+I:4action:0101: 	1.0
+I:4action:0110: 	0.0
+I:4action:0000: 	0.0
+I:4action:1100: 	0.0
+I:5action:0101: 	1.0
+I:5action:0100: 	0.0
+I:5action:0111: 	0.0
+I:5action:0001: 	0.0
+I:5action:1101: 	0.0
+I:6action:0110: 	1.0
+I:6action:0111: 	0.0
+I:6action:0100: 	0.0
+I:6action:0010: 	0.0
+I:6action:1110: 	0.0
+I:7action:0111: 	0.0
+I:7action:0110: 	0.0
+I:7action:0101: 	0.0
+I:7action:0011: 	0.0
+I:7action:1111: 	1.0
+I:8action:1000: 	0.0
+I:8action:1001: 	0.0
+I:8action:1010: 	1.0
+I:8action:1100: 	0.0
+I:8action:0000: 	0.0
+I:9action:1001: 	1.0
+I:9action:1000: 	0.0
+I:9action:1011: 	0.0
+I:9action:1101: 	0.0
+I:9action:0001: 	0.0
+I:10action:1010: 	1.0
+I:10action:1011: 	0.0
+I:10action:1000: 	0.0
+I:10action:1110: 	0.0
+I:10action:0010: 	0.0
+I:11action:1011: 	0.0
+I:11action:1010: 	0.0
+I:11action:1001: 	0.0
+I:11action:1111: 	1.0
+I:11action:0011: 	0.0
+I:12action:1100: 	1.0
+I:12action:1101: 	0.0
+I:12action:1110: 	0.0
+I:12action:1000: 	0.0
+I:12action:0100: 	0.0
+I:13action:1101: 	0.0
+I:13action:1100: 	0.0
+I:13action:1111: 	1.0
+I:13action:1001: 	0.0
+I:13action:0101: 	0.0
+I:14action:1110: 	0.0
+I:14action:1111: 	1.0
+I:14action:1100: 	0.0
+I:14action:1010: 	0.0
+I:14action:0110: 	0.0
+I:15action:1111: 	1.0
+I:15action:1110: 	0.0
+I:15action:1101: 	0.0
+I:15action:1011: 	0.0
+I:15action:0111: 	0.0

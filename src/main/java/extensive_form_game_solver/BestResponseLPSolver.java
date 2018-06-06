@@ -241,7 +241,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 	@Override
 	public double[][][] getStrategyProfile() {
 		double[][][] map = new double[3][][];
-		
+		System.out.println("Test Best Response");
 		map[playerToSolveFor] = new double[numPrimalInformationSets][];
 		for (int informationSetId = 0; informationSetId < numPrimalInformationSets; informationSetId++) {
 			map[playerToSolveFor][informationSetId] = new double[game.getNumActionsAtInformationSet(playerToSolveFor, informationSetId)];
@@ -261,6 +261,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 					} else {
 						map[playerToSolveFor][informationSetId][actionId] = 0;
 					}
+					System.out.println(strategyVarsByInformationSet[informationSetId].get(actionName) + " :  " + map[playerToSolveFor][informationSetId][actionId]);
 				} catch (IloException e) {
 					e.printStackTrace();
 				}
@@ -369,7 +370,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 		assert(numSequencesP2 == game.getNumSequencesP2());
 		
 		// create root sequence var
-		IloNumVar rootSequence = cplex.numVar(1, 1, "Iroot");
+		IloNumVar rootSequence = cplex.numVar(1, 1, "Xroot");
 		strategyVarsBySequenceId[0] = rootSequence;
 		CreateSequenceFormVariablesAndConstraints(game.getRoot(), rootSequence, new TIntHashSet(), 1);
 		
@@ -420,7 +421,9 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 		Node node = game.getNodeById(currentNodeId);
 		if (node.isLeaf()) {
 			double value = playerToSolveFor == player1 ? node.getValue() : -node.getValue();
+			//System.out.println("Val :" + value);
 			objective.addTerm(probability * value, parentSequence);
+			//System.out.println("obj :" + objective);
 			return;
 		}
 		
@@ -430,7 +433,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 			//sum.addTerm(-1, parentSequence);
 			for (Action action : node.getActions()) {
 				// real-valued variable in (0,1)
-				IloNumVar v = cplex.numVar(0, 1, "I:" + node.getInformationSet() + " action: "+action.getName());
+				IloNumVar v = cplex.numVar(0, 1, "I:" + node.getInformationSet() + "action:"+action.getName());
 				strategyVarsByInformationSet[node.getInformationSet()].put(action.getName(), v);
 				int sequenceId = getSequenceIdForPlayerToSolveFor(node.getInformationSet(), action.getName());
 				strategyVarsBySequenceId[sequenceId] = v;
@@ -439,6 +442,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 				CreateSequenceFormVariablesAndConstraints(action.getChildId(), v, visited, probability);
 			}
 			// sum_{sequences} = parent_sequence. cplex.addEq returns a reference to the range object describing the constraint. This is useful for dynamically modifying the model in derived classes.
+			//System.out.println("Sum:" + sum + "p:" + parentSequence);
 			primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, parentSequence,"Primal"+node.getInformationSet()));
 		} else {
 			for (int actionId = 0; actionId < node.getActions().length; actionId++) {
