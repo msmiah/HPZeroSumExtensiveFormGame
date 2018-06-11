@@ -145,9 +145,10 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 					IloNumVar v = strategyVarsBySequenceId[i];
 					cplex.getValue(v);
 				}*/
-				System.out.println("Strategy ID :" + strategyVarsBySequenceId);
-				strategyVars = cplex.getValues(strategyVarsBySequenceId);
-				valueOfGame = playerToSolveFor == player1 ? cplex.getObjValue() : -cplex.getObjValue();
+				//System.out.println("Strategy ID :" + strategyVarsBySequenceId.length);
+				//strategyVars = cplex.getValues(strategyVarsBySequenceId);
+				valueOfGame = playerToSolveFor == player1 ? -cplex.getObjValue() : cplex.getObjValue();
+				System.out.println("Best response game val : " + valueOfGame);
 			}
 		} catch (IloException e) {
 			e.printStackTrace();
@@ -314,6 +315,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 		try {
 			FileWriter fw = new FileWriter(filename);
 			for (IloNumVar v : strategyVarsBySequenceId) {
+				if(v != null)
 				fw.write(v.getName() + ": \t" + cplex.getValue(v) + "\n");
 			}
 			fw.close();
@@ -420,7 +422,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 	private void CreateSequenceFormVariablesAndConstraints(int currentNodeId, IloNumVar parentSequence, TIntSet visited, double probability) throws IloException{
 		Node node = game.getNodeById(currentNodeId);
 		if (node.isLeaf()) {
-			double value = playerToSolveFor == player1 ? node.getValue() : -node.getValue();
+			double value = playerToSolveFor == player1 ? -node.getValue() : node.getValue();
 			//System.out.println("Val :" + value);
 			objective.addTerm(probability * value, parentSequence);
 			//System.out.println("obj :" + objective);

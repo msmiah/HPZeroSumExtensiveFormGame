@@ -14,19 +14,19 @@ public class TestMain {
 	public static void main(String[] args) {
 	Game drpGame = new Game();
 	drpGame.createGameFromFileZerosumPackageFormat("hsg_4_features.efg");
-     SequenceFormLPSolver equilibriumSolver = new SequenceFormLPSolver(drpGame, 2);
+     SequenceFormLPSolver equilibriumSolver = new SequenceFormLPSolver(drpGame, 1);
 	 equilibriumSolver.solveGame();
-	/*try {
+	try {
 		equilibriumSolver.writeStrategyToFile("attackerStrategy.txt");
 	} catch (IloException e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
-	}*/
+	}
 	//equilibriumSolver.printStrategyVarsAndGameValue();
     
-	double[][] p2Strategy = equilibriumSolver.getStrategyProfile()[2];
+	double[][] p2Strategy = equilibriumSolver.getStrategyProfile()[1];
 	
-	BestResponseLPSolver brSolver = new BestResponseLPSolver(drpGame, 1, p2Strategy);
+	BestResponseLPSolver brSolver = new BestResponseLPSolver(drpGame, 2 , p2Strategy);
 	brSolver.solveGame();
 	
 	// double[][] p1Strategy = brSolver.getStrategyProfile()[1];

@@ -406,7 +406,7 @@ public class SequenceFormLPSolverTwo<E> extends ZeroSumGameSolver {
                 if (playerToSolveFor ==1) primalSequenceNames[numSequencesP1-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
                 else dualSequenceNames[numSequencesP1-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
             } else if (node.getPlayer() == 2 && !visitedP2.contains(node.getInformationSet())) {
-            	System.out.println("Sequence player 2: " + Integer.toString(node.getInformationSet()) + ";" + action.getName());
+            	//System.out.println("Sequence player 2: " + Integer.toString(node.getInformationSet()) + ";" + action.getName());
                 sequenceIdByInformationSetAndActionP2[node.getInformationSet()].put(action.getName(), numSequencesP2++);
                if (playerToSolveFor == 2) primalSequenceNames[numSequencesP2-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
                else dualSequenceNames[numSequencesP2-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
@@ -461,8 +461,8 @@ public class SequenceFormLPSolverTwo<E> extends ZeroSumGameSolver {
             }
             // sum_{sequences} = parent_sequence. cplex.addEq returns a reference to the range object describing the constraint. This is useful for dynamically modifying the model in derived classes.
           // System.out.println("parentSequence :" + parentSequence + " sum : " + sum);
-           primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, parentSequence,"Primal"+node.getInformationSet()));
-            // primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, 1));
+          primalConstraints.put(node.getInformationSet(), cplex.addGe(sum, parentSequence,"Primal"+node.getInformationSet()));
+          // primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, 1));
         } else {
 			for (Action action : node.getActions()) {
 
@@ -510,8 +510,8 @@ public class SequenceFormLPSolverTwo<E> extends ZeroSumGameSolver {
         InitializeDualSequenceMatrix();
         InitializeDualPayoffMatrix();
         for (int sequenceId = 0; sequenceId < numDualSequences; sequenceId++) {
-           // CreateDualConstraintForSequence(sequenceId);
-            CreatePrimalConstraintForSequence(sequenceId);
+           CreateDualConstraintForSequence(sequenceId);
+           // CreatePrimalConstraintForSequence(sequenceId);
         }
     }
 
@@ -552,8 +552,8 @@ public class SequenceFormLPSolverTwo<E> extends ZeroSumGameSolver {
     }
 
     private void InitializeDualPayoffMatrix() throws IloException {
-       // InitializeDualPayoffMatrixRecursive(game.getRoot(), 0, 0, 1);     // Start with the root sequences
-        InitializePrimalPayoffMatrixRecursive(game.getRoot(), 0, 0, 1);     // Start with the root sequences
+       InitializeDualPayoffMatrixRecursive(game.getRoot(), 0, 0, 1);     // Start with the root sequences
+      //  InitializePrimalPayoffMatrixRecursive(game.getRoot(), 0, 0, 1);     // Start with the root sequences
     }
 
     private void InitializeDualPayoffMatrixRecursive(int currentNodeId,int primalSequence, int dualSequence, double natureProbability) throws IloException{

@@ -20,7 +20,7 @@ import gnu.trove.map.hash.TObjectIntHashMap;
 
 public class Game implements GameGenerator {
 	
-	public static final int numOfDefenderActions = 5;
+	public static final int numOfDefenderActions = 4;
 	public class Action {	
 		private String name;
 		private int childId; // id of the node lead to by taking this action
@@ -402,10 +402,10 @@ public class Game implements GameGenerator {
 		}
 		
 		
-		/*
-		for (int i = 0; i < numActions/2; i++) {
+		
+		for (int i = 0; i < numActions; i++) {
 			node.actions[i].probability = (double) node.actions[i].probability / sum;
-		}*/
+		}
 		// the root node is the empty history
 	
 		root = node.nodeId;
