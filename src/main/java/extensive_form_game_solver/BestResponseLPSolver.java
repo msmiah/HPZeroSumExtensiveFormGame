@@ -422,10 +422,10 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 	private void CreateSequenceFormVariablesAndConstraints(int currentNodeId, IloNumVar parentSequence, TIntSet visited, double probability) throws IloException{
 		Node node = game.getNodeById(currentNodeId);
 		if (node.isLeaf()) {
-			double value = playerToSolveFor == player1 ? -node.getValue() : node.getValue();
+			double value = playerToSolveFor == player1 ? node.getPlayerOneValue() : node.getPlayerTwoValue();
 			//System.out.println("Val :" + value);
 			objective.addTerm(probability * value, parentSequence);
-			//System.out.println("obj :" + objective);
+			//System.out.println("obj :" + value);
 			return;
 		}
 		

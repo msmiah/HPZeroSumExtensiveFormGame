@@ -17,10 +17,11 @@ import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
+import utils.Utils;
 
 public class Game implements GameGenerator {
 	
-	public static final int numOfDefenderActions = 4;
+	
 	public class Action {	
 		private String name;
 		private int childId; // id of the node lead to by taking this action
@@ -61,7 +62,9 @@ public class Game implements GameGenerator {
 		private int signalGroupPlayer1; // TODO, useful for abstraction algorithms
 		private int signalGroupPlayer2; // TODO, useful for abstraction algorithms
 		private Action[] actions; 
-		private double value; // payoff at node, if node is a leaf node (player == -2) 
+		private double valuePlayerOne; // payoff at node, if node is a leaf node (player == -2) 
+		private double valuePlayerTwo;
+		private double value;
 		public int getNodeId() {
 			return nodeId;
 		}
@@ -100,6 +103,12 @@ public class Game implements GameGenerator {
 		}
 		public double getValue() {
 			return value;
+		}
+		public double getPlayerOneValue() {
+			return valuePlayerOne;
+		}
+		public double getPlayerTwoValue() {
+			return valuePlayerTwo;
 		}
 		public boolean isLeaf() {
 			return player == -2;
@@ -221,9 +230,9 @@ public class Game implements GameGenerator {
 	
 	
 	private void readGameInfoLine(String [] split_line) {
-		numNodes = 257;
-		numInformationSetsPlayer1 = 17;
-		numInformationSetsPlayer2 = 17;
+		numNodes = Utils.TOTAL_NUMBER_OF_NODE;
+		numInformationSetsPlayer1 = Utils.NUM_INFO_SET_PLAYER_1;
+		numInformationSetsPlayer2 = Utils.NUM_INFO_SET_PLAYER_2;
 		
 		informationSets[0] = new TIntArrayList [numInformationSetsPlayer1];
 		informationSets[1] = new TIntArrayList [numInformationSetsPlayer2];
@@ -254,13 +263,16 @@ public class Game implements GameGenerator {
 		node.nodeId = Integer.parseInt(line1);
 		node.name = line[0];
 		node.player = -2;
-		node.value = Double.parseDouble(line[7]);
+		node.valuePlayerOne = Double.parseDouble(line[6]);
+		node.valuePlayerTwo = Double.parseDouble(line[7]);
+		
+		/*
 		if (node.value < smallestPayoff) {
 			smallestPayoff = node.value;
 		}
 		if (node.value > biggestPayoff) {
 			biggestPayoff = node.value;
-		}
+		}*/
 		//System.out.println("Node val:" + node.value);
 		nodes[node.nodeId] = node;
 	}
@@ -393,7 +405,7 @@ public class Game implements GameGenerator {
 		for (int i = 0; i < numActions; i++) {
 			Action action = new Action();
 			action.name = line[((3+i)*2)-1].replace("\"", "");
-			action.childId = i*((3*Game.numOfDefenderActions)+1) + 1;
+			action.childId = i*((3*Utils.numOfDefenderActions)+1) + 1;
 			//System.out.println(action.name + " child id : " + action.childId);
 			action.probability = Double.parseDouble(line[(3+i)*2]);
 			sum += action.probability;
@@ -500,8 +512,10 @@ public class Game implements GameGenerator {
 	}
 
 	public int getNumActionsAtInformationSet(int player, int informationSetId) {
-		//System.out.println(player + "  : " + informationSetId);
-		return nodes[informationSets[player-1][informationSetId].get(0)].getActions().length;
+		if(informationSets[player-1][informationSetId].size() > 0)
+			return nodes[informationSets[player-1][informationSetId].get(0)].getActions().length;
+		return 0;
+		
 	}
 
 	public Action[] getActionsAtInformationSet(int player, int informationSetId) {

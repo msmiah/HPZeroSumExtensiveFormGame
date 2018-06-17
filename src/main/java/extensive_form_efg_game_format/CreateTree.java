@@ -13,30 +13,44 @@ import utils.Utils;
 
 public class CreateTree {
 	private ArrayList<String> mChnaceNodeActionList;
+	private ArrayList<String> realHostConfigList;
+	private ArrayList<String> honeypotConfigLIst;
 	private ArrayList<Double> mChanceNodeProbablityList;
 	private CreateGambitEFGFile createGambitFile;
 	private Hashtable<String, Integer> mBinarytoIntNumbers;
+	public Hashtable<String, Integer> realSystemValues;
+	public Hashtable<String, Integer> honeypotValues;
 	private Node mChanceNode;
 	private int mChaceInfoSetNo = 1;
 	private int mTotalFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
 	private int mOutcomeCnt;
-	private double[] modificationCost = {2.0,3.0,1.0,4.0};
+	private double[] modificationCost = {1.0,2.0,3.0,4.0};
+	
 	
 
 	public void init() {
 		mOutcomeCnt = 0;
 		mChnaceNodeActionList = new ArrayList<String>();
+		realHostConfigList = new ArrayList<String>();
+		honeypotConfigLIst = new ArrayList<String>();
 		mChanceNodeProbablityList = new ArrayList();
 		createGambitFile = new CreateGambitEFGFile("hsg_4_features");
-		mBinarytoIntNumbers = new Hashtable<>();
-		int numChanceNode = (int)Math.pow(2.0,(double) mTotalFeatures);
+		mBinarytoIntNumbers = new Hashtable<>(); 
+		realSystemValues = new Hashtable<>();
+		honeypotValues = new Hashtable<>();
+		setSystemValues();
+		int numChanceNode = (int)Math.pow(2.0,(double) mTotalFeatures)*2;
 		double[] prob = generateRandomProbability(numChanceNode);
 		for (int i = 0; i < prob.length; i++) {
-			double tmp = (Math.round(prob[i] * 100.0)) / 100.0;
-			// System.out.println(tmp);
+			//double tmp = (Math.round(prob[i] * 100.0)) / 100.0; //Random nature probability generation
+			double tmp = ((1.0/prob.length) * 100.0) / 100.0;
+			//System.out.println(tmp);
 			mChanceNodeProbablityList.add(tmp);
 		}
-		generateBinaryRepresentation(0, mTotalFeatures);
+		
+		generateBinaryRepresentation(0, Utils.REAL_HOST_FEATURES_NUM);
+		generateNatureActions();
+		
 		mChanceNode = new Node(Utils.CHANCE_NODE_NAME, mChaceInfoSetNo, mChnaceNodeActionList,
 				mChanceNodeProbablityList, 0);
 		createGambitFile.createChanceNode(mChanceNode.getNodeName(), mChanceNode.getInfoSetNumber(),
@@ -48,24 +62,54 @@ public class CreateTree {
 		 * createGambitFile.createChanceNode("c", 1, mChnaceNodeActionList,
 		 * mChanceNodeProbablityList, 0);
 		 */
+		movePlayerOne();
+	}
+	
+	public void setSystemValues() {
+		realSystemValues.put("00", 5);
+		realSystemValues.put("01", 6);
+		realSystemValues.put("10", 7);
+		realSystemValues.put("11", 8);
+		honeypotValues.put("00", 1);
+		honeypotValues.put("01", 2);
+		honeypotValues.put("10", 3);
+		honeypotValues.put("11", 4);
+		
+	}
+	
+	public void generateNatureActions() {
+		for (int i = 0; i < 2; i++) {
+			for (int j = 0; j < realHostConfigList.size(); j++) {
+				for (int k = 0; k < realHostConfigList.size(); k++) {
+					int realFlag = 0;
+					if(i == 0)
+						realFlag = 1;
+					String actionStr= realFlag +realHostConfigList.get(j)+ i + realHostConfigList.get(k);
+
+					mBinarytoIntNumbers.put(actionStr, Integer.parseInt(actionStr, 2));
+					mChnaceNodeActionList.add(actionStr);
+					
+				}
+			}
+		}
 	}
 
 	private void movePlayerOne() {
 		for (int i = 0; i < mChnaceNodeActionList.size(); i++) {
-			// System.out.println("Main " + mChnaceNodeActionList.get(i));
+			//System.out.println("Main " + mChnaceNodeActionList.get(i));
 			ArrayList<String> actions = new ArrayList<>();
 			ArrayList<Integer> flipPositions = new ArrayList<>();
 			//actions.add(mChnaceNodeActionList.get(i));
 			//flipPositions.add(-1);
 			int infoNo = Integer.parseInt(mChnaceNodeActionList.get(i),2);
-			for (int j = 0; j < Utils.HONEYPOT_FEATURES_NUM + Utils.REAL_HOST_FEATURES_NUM; j++) {
+			for (int j = 0; j < Utils.HONEYPOT_FEATURES_NUM; j++) {
 				int flipFeature = flipBits(infoNo, j);
 				String strFormat = "\""+"%"+ Utils.TOTAL_FEATUES_NUMBER_IN_GAME +"s\"";//TODO find a solution
 				//System.out.println(strFormat);
-				String flippedStr = String.format("%4s", Integer.toBinaryString(flipFeature)).replace(' ', '0');
+				String flippedStr = String.format("%6s", Integer.toBinaryString(flipFeature)).replace(' ', '0');
+				//System.out.println(flippedStr);
 				actions.add(flippedStr);
 				flipPositions.add(j);
-				//System.out.println(flippedStr);
 			}
 
 			createGambitFile.createPlayerNode(Utils.PLAYER_NODE_NAME, Utils.PLAYER_ONE, infoNo,
@@ -85,8 +129,8 @@ public class CreateTree {
 		//System.out.println("P1:"+palyerOneInfoSet);
 		ArrayList<String> actions = new ArrayList<>();
 		int len = playerOneAction.length();
-		actions.add(playerOneAction.substring(0, Utils.REAL_HOST_FEATURES_NUM));
-		actions.add(playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM, Utils.TOTAL_FEATUES_NUMBER_IN_GAME));
+		actions.add(playerOneAction.substring(1, Utils.REAL_HOST_FEATURES_NUM+1));
+		actions.add(playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM+2, Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2));
 		int infosetNo = mBinarytoIntNumbers.get(playerOneAction);
 		// System.out.println(infosetNo);
 		createGambitFile.createPlayerNode(Utils.PLAYER_NODE_NAME, Utils.PLAYER_TWO, infosetNo, playerOneAction, actions,
@@ -129,34 +173,30 @@ public class CreateTree {
 
 		//double realVal = calculatePayoff(natureAction);
 
-		double payoff = getUtility(flipPos);
+		double cost = getUtility(flipPos);
 		//System.out.println("pos" + flipPos + " payoff " + payoff);
+		int isReal = Integer.parseInt(playerOneAction, 2);
+		isReal = isReal >> 5;
 		boolean isEqual = isActionsEqual(actions);
 		ArrayList<Double> payoffs = new ArrayList<>();
 		for (int k = 0; k < actions.size(); k++) {
-			double actionVal = Integer.parseInt((String) actions.get(k), 2);
+			
+			//System.out.println(playerOneAction+"Action:" + actions.get(k));
+
 			if (payoffs.size() != 0)
 				payoffs.clear();
-			/*if (realVal == actionVal + 1) {
-				
-				double payoff;
-				if(flipPos >=0)
-				payoff=  realVal+ calculateFeatureChaningCost(playerOneAction, playerOneInfoSet, flipPos);// feature changing cost added with real value
-				else
-					payoff = realVal;*/
-			if (k == 0 || isEqual) {
-				if (isEqual) {
-
-					payoffs.add(-payoff / 2);
-					payoffs.add(payoff / 2);
-				} else {
-					payoffs.add(-payoff);
-					payoffs.add(payoff);
-				}
-			} else {
-				payoffs.add(0.0);
-				payoffs.add(0.0);
+			if(isReal == 1) {
+				isReal = 0;
+				double payoff = realSystemValues.get(actions.get(k));
+				payoffs.add(-(cost + payoff));
+				payoffs.add(payoff);
+			}else {
+				isReal = 1;
+				double payoff = honeypotValues.get(actions.get(k));
+				payoffs.add((payoff-cost));
+				payoffs.add(-payoff);
 			}
+			
 			createGambitFile.createTerminalNode(Utils.TERMINAL_NODE_NAME, ++mOutcomeCnt, "Outcome " + mOutcomeCnt,
 					payoffs);
 		}
@@ -169,7 +209,7 @@ public class CreateTree {
 		return n ^ mask;
 	}
 
-	private void closeFile() {
+	public void closeFile() {
 		createGambitFile.closeFile();
 	}
 
@@ -197,12 +237,13 @@ public class CreateTree {
 				temp = '0' + temp;
 			}
 			//System.out.println(temp);
-			mBinarytoIntNumbers.put(temp, Integer.parseInt(temp, 2));
-			mChnaceNodeActionList.add(temp);
+			realHostConfigList.add(temp);
+			//mBinarytoIntNumbers.put(temp, Integer.parseInt(temp, 2));
+			//mChnaceNodeActionList.add(temp);
 			generateBinaryRepresentation(i + 1, n);
 		}
 	}
-
+/*
 	public static void main(String[] args) {
 		CreateTree tree = new CreateTree();
 		tree.init();
@@ -212,5 +253,5 @@ public class CreateTree {
 		// tree.generateBinaryRepresentation(0, 2);
 		// double[] arr = tree.getRandomProbability(5);
 
-	}
+	}*/
 }

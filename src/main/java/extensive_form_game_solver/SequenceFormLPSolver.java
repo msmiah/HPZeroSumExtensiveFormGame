@@ -390,7 +390,7 @@ public class SequenceFormLPSolver<E> extends ZeroSumGameSolver {
         for (Action action : node.getActions()) {
             if (node.getPlayer() == 1 && !visitedP1.contains(node.getInformationSet())) {
                 sequenceIdByInformationSetAndActionP1[node.getInformationSet()].put(action.getName(), numSequencesP1++);
-                System.out.println("Sequence player 1: " + Integer.toString(node.getInformationSet()) + ";" + action.getName());
+                //System.out.println("Sequence player 1: " + Integer.toString(node.getInformationSet()) + ";" + action.getName());
                 if (playerToSolveFor ==1) primalSequenceNames[numSequencesP1-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
                 else dualSequenceNames[numSequencesP1-1] = Integer.toString(node.getInformationSet()) + ";" + action.getName();
             } else if (node.getPlayer() == 2 && !visitedP2.contains(node.getInformationSet())) {
@@ -522,9 +522,11 @@ public class SequenceFormLPSolver<E> extends ZeroSumGameSolver {
         	return;
 
         if (node.isLeaf()) {
-            int valueMultiplier = playerToSolveFor == 1? 1 : -1;
+            //int valueMultiplier = playerToSolveFor == 1? 1 : -1;
+            double valueMultiplier = playerToSolveFor == 1? node.getPlayerOneValue() : node.getPlayerTwoValue();
             //System.out.println("Current node : " + currentNodeId + "Primal seq : " + primalSequence + " Dual seq " + dualSequence);
-            double leafValue = valueMultiplier * natureProbability * node.getValue();
+            //double leafValue = valueMultiplier * natureProbability * node.getValue();
+            double leafValue = valueMultiplier * natureProbability;
             if (dualPayoffMatrix[dualSequence].containsKey(primalSequence)) {
                 dualPayoffMatrix[dualSequence].put(primalSequence, leafValue + dualPayoffMatrix[dualSequence].get(primalSequence));
             } else {
@@ -682,8 +684,10 @@ public class SequenceFormLPSolver<E> extends ZeroSumGameSolver {
         double[][][] profile = new double[3][][];
         profile[playerToSolveFor] = new double [numPrimalInformationSets][];
         //player two has 15 information set thats why minus 2 added
+        //System.out.println("Num of Primal set"+  numPrimalInformationSets);
         for (int informationSetId = 0; informationSetId < numPrimalInformationSets-1; informationSetId++) {
             profile[playerToSolveFor][informationSetId] = new double[game.getNumActionsAtInformationSet(playerToSolveFor, informationSetId)];
+            
             double sum = 0;
             for (String actionName : strategyVarsByInformationSet[informationSetId].keySet()) {
                 try {
@@ -713,8 +717,9 @@ public class SequenceFormLPSolver<E> extends ZeroSumGameSolver {
 						profile[playerToSolveFor][informationSetId][actionId] = 1.0
 								/ game.getNumActionsAtInformationSet(playerToSolveFor, informationSetId);
 					}
+					/*
 					System.out.println(strategyVarsByInformationSet[informationSetId].get(actionName) + " :  "
-							+ profile[playerToSolveFor][informationSetId][actionId]);
+							+ profile[playerToSolveFor][informationSetId][actionId]);*/
 				} catch (IloException e) {
 					e.printStackTrace();
 				}
