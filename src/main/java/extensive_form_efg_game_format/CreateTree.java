@@ -66,11 +66,11 @@ public class CreateTree {
 	}
 	
 	public void setSystemValues() {
-		realSystemValues.put("00", 5);
-		realSystemValues.put("01", 6);
-		realSystemValues.put("10", 7);
-		realSystemValues.put("11", 8);
-		honeypotValues.put("00", 1);
+		realSystemValues.put("00", 1 );
+		realSystemValues.put("01", 2);
+		realSystemValues.put("10", 3);
+		realSystemValues.put("11", 4);
+		honeypotValues.put("00", 3);
 		honeypotValues.put("01", 2);
 		honeypotValues.put("10", 3);
 		honeypotValues.put("11", 4);

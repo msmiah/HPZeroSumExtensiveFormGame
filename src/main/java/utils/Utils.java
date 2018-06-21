@@ -21,6 +21,8 @@ public class Utils {
 	public static final int NUM_INFO_SET_PLAYER_1=64;
 	public static final int NUM_INFO_SET_PLAYER_2 = 64;
 	public static final int  TOTAL_NUMBER_OF_NODE = 257;
+	public static final int PLAYER_ONE_MAX_VAL = 3;
+
 	
 
 }

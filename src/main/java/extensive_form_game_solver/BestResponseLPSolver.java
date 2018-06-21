@@ -33,6 +33,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 	int playerNotToSolveFor;
 	
 	double[][] opponentStrategy;
+	int cnt = 0;
 	
 	IloCplex cplex;
 	//IloNumVar[] modelStrategyVars;
@@ -343,7 +344,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 		try {
 			cplex.setParam(IloCplex.IntParam.SimDisplay, 0);
 			cplex.setParam(IloCplex.IntParam.MIPDisplay, 0);
-			cplex.setParam(IloCplex.IntParam.MIPInterval, -1);
+			cplex.setParam(IloCplex.IntParam.MIPInterval, 0);
 			cplex.setParam(IloCplex.IntParam.TuningDisplay, 0);
 			cplex.setParam(IloCplex.IntParam.BarDisplay, 0);
 			cplex.setParam(IloCplex.IntParam.SiftDisplay, 0);
@@ -419,13 +420,15 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 	 * @param visited keeps track of which information sets have been visited
 	 * @throws IloException
 	 */
+	
 	private void CreateSequenceFormVariablesAndConstraints(int currentNodeId, IloNumVar parentSequence, TIntSet visited, double probability) throws IloException{
 		Node node = game.getNodeById(currentNodeId);
 		if (node.isLeaf()) {
 			double value = playerToSolveFor == player1 ? node.getPlayerOneValue() : node.getPlayerTwoValue();
 			//System.out.println("Val :" + value);
 			objective.addTerm(probability * value, parentSequence);
-			//System.out.println("obj :" + value);
+			//System.out.println("obj :" + objective);
+			//System.out.println(++cnt);
 			return;
 		}
 		
@@ -446,6 +449,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 			// sum_{sequences} = parent_sequence. cplex.addEq returns a reference to the range object describing the constraint. This is useful for dynamically modifying the model in derived classes.
 			//System.out.println("Sum:" + sum + "p:" + parentSequence);
 			primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, parentSequence,"Primal"+node.getInformationSet()));
+			//System.out.println("Game value check : " + cplex.getObjValue());
 		} else {
 			for (int actionId = 0; actionId < node.getActions().length; actionId++) {
 			Action action = node.getActions()[actionId];
@@ -462,16 +466,12 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 		}
 	}
 	
-	private double getProbabilityOfAction(Node node, int actionId) {
+	private double getProbabilityOfAction(Node node, int actionId) throws IloException {
 		if (node.getPlayer() == nature) {
-			//System.out.println(" getProbabilityOfAction" + actionId);
-			if(actionId > 15)
-				return  1;
+			if(cplex.solve())
+			System.out.println(" getProbabilityOfAction " + node.getNodeId() + "action :" + cplex.getObjValue()  );
 			return node.getActions()[actionId].getProbability();
 		} else if (node.getPlayer() == playerNotToSolveFor){
-			//System.out.println(node.getInformationSet() + " getProbabilityOfAction" + actionId);
-			if(node.getInformationSet() == 16)
-				return  1;
 			return opponentStrategy[node.getInformationSet()][actionId];
 		} else {
 			System.out.println("BestResponseLPSolver::getProbabilityOfAction error: tried to get probability of playerToSolveFor action");
