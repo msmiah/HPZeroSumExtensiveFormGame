@@ -20,6 +20,8 @@ public class CreateTree {
 	private Hashtable<String, Integer> mBinarytoIntNumbers;
 	public Hashtable<String, Integer> realSystemValues;
 	public Hashtable<String, Integer> honeypotValues;
+	public Hashtable<String, Double> realSystemProbabilities;
+	public Hashtable<String, Double> honeypotProbabilites;
 	private Node mChanceNode;
 	private int mChaceInfoSetNo = 1;
 	private int mTotalFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
@@ -37,7 +39,9 @@ public class CreateTree {
 		createGambitFile = new CreateGambitEFGFile("hsg_4_features");
 		mBinarytoIntNumbers = new Hashtable<>(); 
 		realSystemValues = new Hashtable<>();
+		realSystemProbabilities = new Hashtable<>();
 		honeypotValues = new Hashtable<>();
+		honeypotProbabilites = new Hashtable<>();
 		setSystemValues();
 		int numChanceNode = (int)Math.pow(2.0,(double) mTotalFeatures)*2;
 		double[] prob = generateRandomProbability(numChanceNode);
@@ -45,9 +49,9 @@ public class CreateTree {
 			//double tmp = (Math.round(prob[i] * 100.0)) / 100.0; //Random nature probability generation
 			double tmp = ((1.0/prob.length) * 100.0) / 100.0;
 			//System.out.println(tmp);
-			mChanceNodeProbablityList.add(tmp);
+			//mChanceNodeProbablityList.add(tmp);
 		}
-		
+		setProbability();
 		generateBinaryRepresentation(0, Utils.REAL_HOST_FEATURES_NUM);
 		generateNatureActions();
 		
@@ -65,6 +69,14 @@ public class CreateTree {
 		movePlayerOne();
 	}
 	
+	public void setProbability() {
+		realSystemProbabilities.put("00",0.25);
+		realSystemProbabilities.put("01", 0.25);
+		realSystemProbabilities.put("10", 0.25);
+		realSystemProbabilities.put("11", 0.25);
+		
+	}
+	
 	public void setSystemValues() {
 		realSystemValues.put("00", 1 );
 		realSystemValues.put("01", 2);
@@ -78,20 +90,28 @@ public class CreateTree {
 	}
 	
 	public void generateNatureActions() {
-		for (int i = 0; i < 2; i++) {
+		double sum = 0;
+		for (int i = 0; i < 1; i++) {
 			for (int j = 0; j < realHostConfigList.size(); j++) {
 				for (int k = 0; k < realHostConfigList.size(); k++) {
 					int realFlag = 0;
-					if(i == 0)
+					double probability=0;
+					if(i == 0) {
 						realFlag = 1;
+						probability = realSystemProbabilities.get(realHostConfigList.get(j)) * (1 - realSystemProbabilities.get(realHostConfigList.get(k)));
+						//System.out.println("Prob : " + probability);
+						sum += probability;
+					}
 					String actionStr= realFlag +realHostConfigList.get(j)+ i + realHostConfigList.get(k);
-
+					//System.out.println(actionStr);
+					mChanceNodeProbablityList.add(probability);
 					mBinarytoIntNumbers.put(actionStr, Integer.parseInt(actionStr, 2));
 					mChnaceNodeActionList.add(actionStr);
 					
 				}
 			}
 		}
+		//System.out.println("Sum : " + sum);
 	}
 
 	private void movePlayerOne() {

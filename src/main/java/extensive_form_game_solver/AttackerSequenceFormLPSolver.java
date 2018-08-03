@@ -430,6 +430,9 @@ public class AttackerSequenceFormLPSolver<E> extends ZeroSumGameSolver {
      * @param visited keeps track of which information sets have been visited
      * @throws IloException
      */
+    private void updateProbabilitDistribution() {
+    	
+    }
     private void CreateSequenceFormVariablesAndConstraints(int currentNodeId, IloNumVar parentSequence, TIntSet visited, double natureProbability) throws IloException{
         Node node = game.getNodeById(currentNodeId);
         if (null == node) return;
@@ -446,6 +449,9 @@ public class AttackerSequenceFormLPSolver<E> extends ZeroSumGameSolver {
         if (node.getPlayer() == playerToSolveFor && !visited.contains(node.getInformationSet())) {
             visited.add(node.getInformationSet()); 
             IloLinearNumExpr sum = cplex.linearNumExpr();
+            IloNumVar maxProbVar=null;
+            double maxProb = 0;
+            double systemValue = 0;
             //sum.addTerm(-1, parentSequence);
             for (Action action : node.getActions()) {
                 // real-valued variable in (0,1)
@@ -453,13 +459,19 @@ public class AttackerSequenceFormLPSolver<E> extends ZeroSumGameSolver {
                 
                 strategyVarsByInformationSet[node.getInformationSet()].put(action.getName(), v);
                 int sequenceId = getSequenceIdForPlayerToSolveFor(node.getInformationSet(), action.getName());
-                int val = node.getInformationSet() >> 2;
-                cplex.output().println("SequenceID = " + node.getInformationSet() + "val " + val +  "Prob :"  + natureProbability);
+                
                 strategyVarsBySequenceId[sequenceId] = v;
                 realValueBySequenceId[sequenceId] = node.getInformationSet();
                 // add 1*v to the sum over all the sequences at the information set
                 sum.addTerm(1, v);
                // System.out.println("Child val" + game.getNodeById(action.getChildId()).getValue());
+                if(game.getSystemProbability(0, action.getName()) > maxProb)
+                {
+                  maxProbVar = v;
+                  maxProb = game.getSystemProbability(0, action.getName());
+                  systemValue = game.getNodeById(action.getChildId()).getPlayerTwoValue();
+                 // System.out.println("Maxprob = " + maxProbVar);
+                }
                 CreateSequenceFormVariablesAndConstraints(action.getChildId(), v, visited, natureProbability);
             }
             // sum_{sequences} = parent_sequence. cplex.addEq returns a reference to the range object describing the constraint. This is useful for dynamically modifying the model in derived classes.
@@ -468,6 +480,8 @@ public class AttackerSequenceFormLPSolver<E> extends ZeroSumGameSolver {
             // ******************* Set constraints for defender **************************************
            // parentSequence.setLB(natureProbability);
             //parentSequence.setUB(natureProbability);
+           // System.out.println(maxProbVar +  " = "+systemValue + " prob : " + natureProbability);
+            objective.addTerm(natureProbability * systemValue, parentSequence);
             primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, parentSequence,"Primal"+node.getInformationSet()));
           // primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, 1));
         } else {
@@ -631,7 +645,7 @@ public class AttackerSequenceFormLPSolver<E> extends ZeroSumGameSolver {
             lhs.addTerm(-it.value(), strategyVarsBySequenceId[it.key()]);
         }
          
-        //System.out.println("exp for dual : " + lhs);
+        System.out.println("exp for dual : " + lhs);
         dualConstraints.put(sequenceId, cplex.addLe(lhs, 0, "Dual"+sequenceId));
     }
 
@@ -675,7 +689,7 @@ public class AttackerSequenceFormLPSolver<E> extends ZeroSumGameSolver {
 
 
     private void SetObjective() throws IloException {
-        cplex.addMaximize(cplex.prod(1, dualVars[0]));
+       // cplex.addMaximize(cplex.prod(1, dualVars[0]));
         //System.out.println("Object :" + objective);
     	//cplex.addMaximize(objective);
     }

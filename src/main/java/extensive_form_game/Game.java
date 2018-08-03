@@ -152,6 +152,7 @@ public class Game implements GameGenerator {
 	
 	private boolean hasAbstraction;
 	private int[][] abstraction; 
+	private HashMap<String, Double>[] systemProbability = new HashMap[2];
 
 	
 	public Game() {
@@ -168,6 +169,8 @@ public class Game implements GameGenerator {
 		biggestPayoff = -Double.MAX_VALUE;
 		observedActionsToInformationSetId[1] = new HashMap<List<String>, Integer>();
 		observedActionsToInformationSetId[2] = new HashMap<List<String>, Integer>();
+		systemProbability[0] = new HashMap<String,Double>();
+		systemProbability[1] = new HashMap<String,Double>();
 	}
 	
 	public Game(String filename) {
@@ -388,6 +391,33 @@ public class Game implements GameGenerator {
 		return observed;
 	}
 
+	private void insertFeatureProbability(String action, double probability) {
+
+		String realFeature, hpFeature;
+		if (action.substring(0, 1).equals("1")) {
+
+			realFeature = action.substring(1, Utils.REAL_HOST_FEATURES_NUM + 1);
+			hpFeature = action.substring(Utils.REAL_HOST_FEATURES_NUM + 2);
+		} else {
+			hpFeature = action.substring(1, Utils.REAL_HOST_FEATURES_NUM + 1);
+			realFeature = action.substring(Utils.REAL_HOST_FEATURES_NUM + 2);
+		}
+		
+		if(systemProbability[0].containsKey(realFeature)){
+			
+			systemProbability[0].put(realFeature, systemProbability[0].get(realFeature) + probability);
+		}else {
+			systemProbability[0].put(realFeature,probability);
+		}
+		
+		if(systemProbability[1].containsKey(hpFeature)){
+			systemProbability[1].put(hpFeature, systemProbability[1].get(hpFeature) + probability);
+		}else {
+			systemProbability[1].put(hpFeature,probability);
+		}
+		
+		//System.out.println(realFeature+  "real"+ systemProbability[0].get(realFeature));
+	}
 	
 	private void CreateZeroSumPackageStyleNatureNode(String[] line) {
 		
@@ -411,12 +441,14 @@ public class Game implements GameGenerator {
 			sum += action.probability;
 			node.actions[i] = action;		
 			//System.out.println("Prob :" + action.probability);
+			insertFeatureProbability(action.name, action.probability);
 		}
 		
 		
 		
 		for (int i = 0; i < numActions; i++) {
 			node.actions[i].probability = (double) node.actions[i].probability / sum;
+			System.out.println("Normalize prob :" + node.actions[i].probability);
 		}
 		// the root node is the empty history
 	
@@ -618,7 +650,13 @@ public class Game implements GameGenerator {
 	public int getSmallestInformationSetId(int player) {
 		return smallestInformationSetId[player-1];
 	}
+	public double getSystemProbability(int type,String action) {
+		return systemProbability[type].get(action);
+	}
 
+	public void setSystemProbability(int type,String action, double probability) {
+		systemProbability[type].put(action,probability);
+	}
 
 	@Override
 	public GameState getInitialGameState() {

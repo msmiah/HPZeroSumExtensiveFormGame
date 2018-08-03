@@ -21,17 +21,17 @@ public class TestMain {
 
 		Game drpGame = new Game();
 		drpGame.createGameFromFileZerosumPackageFormat("hsg_4_features.efg");
-		 DefenderSequenceFormLPSolver equilibriumSolver = new DefenderSequenceFormLPSolver(drpGame, 1);
+		DefenderSequenceFormLPSolver equilibriumSolver = new DefenderSequenceFormLPSolver(drpGame, 1);
 		// AttackerSequenceFormLPSolver equilibriumSolver = new AttackerSequenceFormLPSolver(drpGame, 2);
 	    //SequenceFormLPSolver equilibriumSolver = new SequenceFormLPSolver(drpGame, 1);
 		equilibriumSolver.solveGame();
-		/*
+		
 		try {
 			equilibriumSolver.writeStrategyToFile("defenderStrategy.txt");
 		} catch (IloException e) {
 			e.printStackTrace();
 		}
-        
+        /*
 		double[][] p2Strategy = equilibriumSolver.getStrategyProfile()[1];
 
 		BestResponseLPSolver brSolver = new BestResponseLPSolver(drpGame, 2, p2Strategy);
