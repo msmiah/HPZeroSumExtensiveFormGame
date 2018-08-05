@@ -444,7 +444,7 @@ public class Game implements GameGenerator {
 			insertFeatureProbability(action.name, action.probability);
 		}
 		
-		
+
 		
 		for (int i = 0; i < numActions; i++) {
 			node.actions[i].probability = (double) node.actions[i].probability / sum;

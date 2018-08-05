@@ -22,6 +22,7 @@ public class CreateTree {
 	public Hashtable<String, Integer> honeypotValues;
 	public Hashtable<String, Double> realSystemProbabilities;
 	public Hashtable<String, Double> honeypotProbabilites;
+	public Hashtable<String,String> p2InformationSet;
 	private Node mChanceNode;
 	private int mChaceInfoSetNo = 1;
 	private int mTotalFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
@@ -42,6 +43,7 @@ public class CreateTree {
 		realSystemProbabilities = new Hashtable<>();
 		honeypotValues = new Hashtable<>();
 		honeypotProbabilites = new Hashtable<>();
+		p2InformationSet = new Hashtable<>();
 		setSystemValues();
 		int numChanceNode = (int)Math.pow(2.0,(double) mTotalFeatures)*2;
 		double[] prob = generateRandomProbability(numChanceNode);
@@ -89,6 +91,23 @@ public class CreateTree {
 		
 	}
 	
+	public static String reverseStr(String str) {
+	    if ( str == null ) {
+	          return null;
+	    }
+	    int len = str.length();
+	    if (len <= 0) {
+	        return "";
+	    }
+	    char[] strArr = new char[len];
+	    int count = 0;
+	    for (int i = len - 1; i >= 0; i--) {
+	        strArr[count] = str.charAt(i);
+	        count++;
+	    }
+	    return new String(strArr);
+	}
+	
 	public void generateNatureActions() {
 		double sum = 0;
 		for (int i = 0; i < 1; i++) {
@@ -119,8 +138,8 @@ public class CreateTree {
 			//System.out.println("Main " + mChnaceNodeActionList.get(i));
 			ArrayList<String> actions = new ArrayList<>();
 			ArrayList<Integer> flipPositions = new ArrayList<>();
-			//actions.add(mChnaceNodeActionList.get(i));
-			//flipPositions.add(-1);
+			actions.add(mChnaceNodeActionList.get(i));
+			flipPositions.add(-1);
 			int infoNo = Integer.parseInt(mChnaceNodeActionList.get(i),2);
 			for (int j = 0; j < Utils.HONEYPOT_FEATURES_NUM; j++) {
 				int flipFeature = flipBits(infoNo, j);
@@ -146,13 +165,18 @@ public class CreateTree {
 	}
 
 	private void movePlayerTwo(String playerOneAction,int flipPos, int palyerOneInfoSet, String natureAction) {
-		//System.out.println("P1:"+palyerOneInfoSet);
+		//System.out.println("P1:"+palyerOneInfoSet); 
 		ArrayList<String> actions = new ArrayList<>();
 		int len = playerOneAction.length();
-		actions.add(playerOneAction.substring(1, Utils.REAL_HOST_FEATURES_NUM+1));
-		actions.add(playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM+2, Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2));
-		int infosetNo = mBinarytoIntNumbers.get(playerOneAction);
-		// System.out.println(infosetNo);
+		String realSysStr = playerOneAction.substring(1, Utils.REAL_HOST_FEATURES_NUM+1);
+		String hpStr = playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM+2, Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2);
+		actions.add(realSysStr);
+		actions.add(hpStr);
+		String p2InfoStr = playerOneAction.substring(0,1)+ p2InformationSet.get(realSysStr)+
+				playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM+1,Utils.REAL_HOST_FEATURES_NUM+2)+p2InformationSet.get(hpStr);
+		int infosetNo = mBinarytoIntNumbers.get(playerOneAction); // playerOne action was used previously. For creating uncertainity for player2 new information set is used.
+		//int infosetNo = mBinarytoIntNumbers.get(p2InfoStr);
+		//System.out.println(infoStr);
 		createGambitFile.createPlayerNode(Utils.PLAYER_NODE_NAME, Utils.PLAYER_TWO, infosetNo, playerOneAction, actions,
 				0);
 		setTerminalNode(actions,flipPos, playerOneAction, palyerOneInfoSet,natureAction);
@@ -177,7 +201,8 @@ public class CreateTree {
 	}
 
 	private double getUtility(int index) {
-		
+		if(index == -1)
+			return 0;
 		return modificationCost[index];
 		
 	}
@@ -256,10 +281,18 @@ public class CreateTree {
 			while (temp.length() < n) {
 				temp = '0' + temp;
 			}
-			//System.out.println(temp);
+			// System.out.println(temp);
+			if (!p2InformationSet.containsKey(temp)) {
+				if (p2InformationSet.contains(reverseStr(temp))) {
+					p2InformationSet.put(temp, p2InformationSet.get(reverseStr(temp)));
+				} else {
+					p2InformationSet.put(temp, temp);
+				}
+
+			}
 			realHostConfigList.add(temp);
-			//mBinarytoIntNumbers.put(temp, Integer.parseInt(temp, 2));
-			//mChnaceNodeActionList.add(temp);
+			// mBinarytoIntNumbers.put(temp, Integer.parseInt(temp, 2));
+			// mChnaceNodeActionList.add(temp);
 			generateBinaryRepresentation(i + 1, n);
 		}
 	}

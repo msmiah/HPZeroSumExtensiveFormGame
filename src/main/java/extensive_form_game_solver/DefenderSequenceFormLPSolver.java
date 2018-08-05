@@ -483,7 +483,7 @@ public class DefenderSequenceFormLPSolver<E> extends ZeroSumGameSolver {
             parentSequence.setUB(natureProbability);
             primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, parentSequence,"Primal"+node.getInformationSet()));
           // primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, 1));
-        } else if(node.getPlayer() == playerNotToSolveFor && !opponentVisited.contains(node.getInformationSet())) {
+        } /*else if(node.getPlayer() == playerNotToSolveFor && !opponentVisited.contains(node.getInformationSet())) {
         	
             opponentVisited.add(node.getInformationSet()); 
             IloLinearNumExpr sum = cplex.linearNumExpr();
@@ -501,7 +501,7 @@ public class DefenderSequenceFormLPSolver<E> extends ZeroSumGameSolver {
            cplex.addEq(sum, 1,"OpponentPrimal"+node.getInformationSet());
         	
         	
-        }
+        }*/
         else {
 			for (Action action : node.getActions()) {
 
@@ -566,18 +566,18 @@ public class DefenderSequenceFormLPSolver<E> extends ZeroSumGameSolver {
         	
            CreateDualConstraintForSequence(sequenceId);
         }
-        
+        /*
         for (int sequenceId = 1; sequenceId < numDualSequences; sequenceId++) {
         	
             CreateP2DualConstraintForSequence(sequenceId);
-         }
+         }*/
     }
 
     private void InitializeDualSequenceMatrix() throws IloException {
         sequenceFormDualMatrix[0].add(0);
         sequenceFormPrimalMatrix[0].add(0);
         InitializeDualSequenceMatrixRecursive(game.getRoot(), new TIntHashSet(), 0);
-        InitializePrimalSequenceMatrixRecursive(game.getRoot(), new TIntHashSet(), 0);
+       // InitializePrimalSequenceMatrixRecursive(game.getRoot(), new TIntHashSet(), 0);
     }
 
     private void InitializeDualSequenceMatrixRecursive(int currentNodeId, TIntSet visited, int parentSequenceId) throws IloException {
@@ -643,7 +643,7 @@ public class DefenderSequenceFormLPSolver<E> extends ZeroSumGameSolver {
     }
 
     private void InitializeDualPayoffMatrix() throws IloException {
-       InitializePrimalPayoffMatrixRecursive(game.getRoot(), 0, 0, 1);     // Start with the root sequences      
+       //InitializePrimalPayoffMatrixRecursive(game.getRoot(), 0, 0, 1);     // Start with the root sequences      
        InitializeDualPayoffMatrixRecursive(game.getRoot(), 0, 0, 1);     // Start with the root sequences
       
     }

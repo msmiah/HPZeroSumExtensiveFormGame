@@ -17,7 +17,7 @@ public class Utils {
 	public static final String TERMINAL_NODE_NAME = "t";
 	
 	
-	public static final int numOfDefenderActions = 2;
+	public static final int numOfDefenderActions = 3;
 	public static final int NUM_INFO_SET_PLAYER_1=64;
 	public static final int NUM_INFO_SET_PLAYER_2 = 64;
 	public static final int  TOTAL_NUMBER_OF_NODE = 257;
