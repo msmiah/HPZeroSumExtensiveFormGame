@@ -173,7 +173,7 @@ public class SequenceFormLPSolver<E> extends ZeroSumGameSolver {
                   //System.out.println("Cplex val : " + cplex.getValue(v));
                   }
               //  strategyVars = cplex.getValues(strategyVarsBySequenceId);
-                valueOfGame = -cplex.getObjValue();
+                valueOfGame = cplex.getObjValue();
                 
                 System.out.println("Value of Game = " + valueOfGame);
             }
@@ -523,7 +523,7 @@ public class SequenceFormLPSolver<E> extends ZeroSumGameSolver {
 
         if (node.isLeaf()) {
             //int valueMultiplier = playerToSolveFor == 1? 1 : -1;
-            double valueMultiplier = playerToSolveFor == 1? node.getPlayerOneValue() : node.getPlayerTwoValue();
+            double valueMultiplier = playerToSolveFor == 2? node.getPlayerOneValue() : node.getPlayerTwoValue();
             //System.out.println("Current node : " + currentNodeId + "Primal seq : " + primalSequence + " Dual seq " + dualSequence);
             //double leafValue = valueMultiplier * natureProbability * node.getValue();
             double leafValue = valueMultiplier * natureProbability;

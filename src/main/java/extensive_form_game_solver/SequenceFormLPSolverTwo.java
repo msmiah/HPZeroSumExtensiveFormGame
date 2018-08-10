@@ -446,7 +446,7 @@ public class SequenceFormLPSolverTwo<E> extends ZeroSumGameSolver {
             visited.add(node.getInformationSet()); 
             IloLinearNumExpr sum = cplex.linearNumExpr();
             //sum.addTerm(-1, parentSequence);
-            for (Action action : node.getActions()) {
+            for (Action action : node.getActions()) {  
                 // real-valued variable in (0,1)
                 IloNumVar v = cplex.numVar(0, 1, "I:" + node.getInformationSet() + "  action:" + action.getName());
                 
@@ -505,8 +505,8 @@ public class SequenceFormLPSolverTwo<E> extends ZeroSumGameSolver {
         }
         String[] names = new String[numVars];
         for (int i = 0; i < numVars; i++) { names[i] = "Y" + i;}
-          //this.dualVars = cplex.numVarArray(numVars, -Double.MAX_VALUE, Double.MAX_VALUE, names);
-          this.dualVars = cplex.numVarArray(numVars, -Double.MAX_VALUE ,Double.MAX_VALUE, names);
+          this.dualVars = cplex.numVarArray(numVars, -Double.MAX_VALUE, Double.MAX_VALUE, names);
+         // this.dualVars = cplex.numVarArray(numVars,0 ,Double.MAX_VALUE, names);
 
         InitializeDualSequenceMatrix();
         InitializeDualPayoffMatrix();
@@ -669,7 +669,7 @@ public class SequenceFormLPSolverTwo<E> extends ZeroSumGameSolver {
 
     private void SetObjective() throws IloException {
         //cplex.addMinimize(cplex.prod(1, dualVars[0]));
-        //System.out.println("Object :" + objective);
+        System.out.println("Object :" + objective);
     	cplex.addMaximize(objective);
     }
 

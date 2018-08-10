@@ -27,7 +27,7 @@ public class CreateTree {
 	private int mChaceInfoSetNo = 1;
 	private int mTotalFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
 	private int mOutcomeCnt;
-	private double[] modificationCost = {1.0,2.0,3.0,4.0};
+	private double[] modificationCost = {2.0,1.0,1.0,1.0};
 	
 	
 
@@ -72,22 +72,22 @@ public class CreateTree {
 	}
 	
 	public void setProbability() {
-		realSystemProbabilities.put("00",0.25);
-		realSystemProbabilities.put("01", 0.25);
-		realSystemProbabilities.put("10", 0.25);
-		realSystemProbabilities.put("11", 0.25);
+		realSystemProbabilities.put("00",0.5);
+		realSystemProbabilities.put("01", 0.3);
+		realSystemProbabilities.put("10", 0.2);
+		realSystemProbabilities.put("11", 0.0);
 		
 	}
 	
 	public void setSystemValues() {
-		realSystemValues.put("00", 1 );
-		realSystemValues.put("01", 2);
-		realSystemValues.put("10", 3);
-		realSystemValues.put("11", 4);
-		honeypotValues.put("00", 3);
-		honeypotValues.put("01", 2);
-		honeypotValues.put("10", 3);
-		honeypotValues.put("11", 4);
+		realSystemValues.put("00", 4 );
+		realSystemValues.put("01", 3);
+		realSystemValues.put("10", 1);
+		realSystemValues.put("11", 1);
+		honeypotValues.put("00", 1);
+		honeypotValues.put("01", 1);
+		honeypotValues.put("10", 1);
+		honeypotValues.put("11", 1);
 		
 	}
 	
