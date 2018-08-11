@@ -73,21 +73,25 @@ public class CreateTree {
 	
 	public void setProbability() {
 		realSystemProbabilities.put("00",0.5);
-		realSystemProbabilities.put("01", 0.3);
-		realSystemProbabilities.put("10", 0.2);
-		realSystemProbabilities.put("11", 0.0);
+		realSystemProbabilities.put("01", 0.1);
+		realSystemProbabilities.put("10", 0.3);
+		realSystemProbabilities.put("11", 0.1);
+		honeypotProbabilites.put("00", 0.2);
+		honeypotProbabilites.put("01", 0.2);
+		honeypotProbabilites.put("10", 0.3);
+		honeypotProbabilites.put("11", 0.3);
 		
 	}
 	
 	public void setSystemValues() {
-		realSystemValues.put("00", 4 );
-		realSystemValues.put("01", 3);
-		realSystemValues.put("10", 1);
-		realSystemValues.put("11", 1);
-		honeypotValues.put("00", 1);
-		honeypotValues.put("01", 1);
-		honeypotValues.put("10", 1);
-		honeypotValues.put("11", 1);
+		realSystemValues.put("00", 2);
+		realSystemValues.put("01", 2);
+		realSystemValues.put("10", 2);
+		realSystemValues.put("11", 2);
+		honeypotValues.put("00", 2);
+		honeypotValues.put("01", 2);
+		honeypotValues.put("10", 2);
+		honeypotValues.put("11",2);
 		
 	}
 	
@@ -117,7 +121,7 @@ public class CreateTree {
 					double probability=0;
 					if(i == 0) {
 						realFlag = 1;
-						probability = realSystemProbabilities.get(realHostConfigList.get(j)) * (1 - realSystemProbabilities.get(realHostConfigList.get(k)));
+						probability = realSystemProbabilities.get(realHostConfigList.get(j)) * honeypotProbabilites.get(realHostConfigList.get(k));
 						//System.out.println("Prob : " + probability);
 						sum += probability;
 					}

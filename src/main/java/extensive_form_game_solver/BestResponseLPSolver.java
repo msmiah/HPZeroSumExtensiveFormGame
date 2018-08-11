@@ -468,8 +468,8 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 	
 	private double getProbabilityOfAction(Node node, int actionId) throws IloException {
 		if (node.getPlayer() == nature) {
-			if(cplex.solve())
-			System.out.println(" getProbabilityOfAction " + node.getNodeId() + "action :" + cplex.getObjValue()  );
+			//if(cplex.solve())
+			//System.out.println(" getProbabilityOfAction " + node.getNodeId() + "action :" + cplex.getObjValue()  );
 			return node.getActions()[actionId].getProbability();
 		} else if (node.getPlayer() == playerNotToSolveFor){
 			return opponentStrategy[node.getInformationSet()][actionId];

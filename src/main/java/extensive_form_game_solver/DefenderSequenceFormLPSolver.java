@@ -549,7 +549,7 @@ public class DefenderSequenceFormLPSolver<E> extends ZeroSumGameSolver {
         String[] names = new String[numVars];
         String[] otherNames = new String[otherPlayerNumVars];
         for (int i = 0; i < numVars; i++) { names[i] = "Y" + i;}
-          this.dualVars = cplex.numVarArray(numVars, -Double.MAX_VALUE, 0, names);
+          this.dualVars = cplex.numVarArray(numVars, -Double.MAX_VALUE,Utils.PLAYER_ONE_MAX_VAL, names);
          // this.dualVars = cplex.numVarArray(numVars, -Double.MAX_VALUE , Utils.PLAYER_ONE_MAX_VAL, names);
           
         for(int i=0; i < otherPlayerNumVars; i++) {otherNames[i] = "X" + i;}
@@ -590,7 +590,7 @@ public class DefenderSequenceFormLPSolver<E> extends ZeroSumGameSolver {
         
         
 		if (playerNotToSolveFor == node.getPlayer()) {
-			System.out.println(natureProbability+ "Infoset" + node.getInformationSet());
+			//System.out.println(natureProbability+ "Infoset" + node.getInformationSet());
 			if (sequenceFormDualProbMatrix[parentSequenceId].containsKey(node.getInformationSet())) {
 				sequenceFormDualProbMatrix[parentSequenceId].put(node.getInformationSet(),(sequenceFormDualProbMatrix[parentSequenceId].get(node.getInformationSet()) * natureProbability));
 			} else {
@@ -674,7 +674,7 @@ public class DefenderSequenceFormLPSolver<E> extends ZeroSumGameSolver {
         if (node.isLeaf()) {
             double valueMultiplier = playerNotToSolveFor == 1? node.getPlayerOneValue() : node.getPlayerTwoValue();
             //System.out.println("Current node : " + currentNodeId + "Primal seq : " + primalSequence + " Dual seq " + dualSequence);
-            double leafValue = valueMultiplier;
+            double leafValue = valueMultiplier*natureProbability;
            // System.out.println("leaf node val :" + dualSequence);
             if (primalPayoffMatrix[dualSequence].containsKey(primalSequence)) {
             	//System.out.println("A:" +primalSequence  );
@@ -711,7 +711,7 @@ public class DefenderSequenceFormLPSolver<E> extends ZeroSumGameSolver {
         if (node.isLeaf()) {
             double valueMultiplier = playerToSolveFor == 1? node.getPlayerOneValue() : node.getPlayerTwoValue();
             //System.out.println("Current node : " + currentNodeId + "Primal seq : " + primalSequence + " Dual seq " + dualSequence);
-            double leafValue = valueMultiplier;
+            double leafValue = (valueMultiplier);
            // System.out.println("leaf node val :" + dualSequence);
             if (dualPayoffMatrix[dualSequence].containsKey(primalSequence)) {
             	//System.out.println("A:" +primalSequence  );
@@ -746,9 +746,9 @@ public class DefenderSequenceFormLPSolver<E> extends ZeroSumGameSolver {
             int informationSetId = sequenceFormDualMatrix[sequenceId].get(i) ;//+ (1-game.getSmallestInformationSetId(playerNotToSolveFor)); // map information set ID to 1 indexing. Assumes that information sets are named by consecutive integers
             double valueMultiplier;
             if(sequenceId == 0)
-                valueMultiplier = i == 0? 1 : -sequenceFormDualProbMatrix[0].get(informationSetId);
+                valueMultiplier = i == 0? -1 : sequenceFormDualProbMatrix[0].get(informationSetId);
             else
-            	valueMultiplier = i == 0? 1 : -1;
+            	valueMultiplier = i == 0? -1 : 1;
             
             //IloNumExpr tmp = (IloNumExpr) cplex.prod(dualVars[informationSetId],strategyVarsBySequenceId[i]);
             
@@ -763,11 +763,14 @@ public class DefenderSequenceFormLPSolver<E> extends ZeroSumGameSolver {
         for ( int i = dualPayoffMatrix[sequenceId].size(); i-- > 0; ) {
             it.advance();
            
-            lhs.addTerm(-it.value(), strategyVarsBySequenceId[it.key()]);
+            lhs.addTerm(it.value(), strategyVarsBySequenceId[it.key()]);
         }
           
-       // System.out.println("exp for dual : " + lhs);
-        dualConstraints.put(sequenceId, cplex.addLe(lhs, 0, "Dual"+sequenceId));
+        //System.out.println("exp for dual : " + lhs);
+        if(sequenceId == 0)
+        	dualConstraints.put(sequenceId, cplex.addEq(lhs, 0, "Dual"+sequenceId));
+        else
+        	dualConstraints.put(sequenceId, cplex.addGe(lhs, 0, "Dual"+sequenceId));
     }
     
     

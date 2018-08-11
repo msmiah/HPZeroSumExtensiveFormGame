@@ -31,7 +31,7 @@ public class TestMain {
 		} catch (IloException e) {
 			e.printStackTrace();
 		}
-     /*  
+      
 		double[][] p2Strategy = equilibriumSolver.getStrategyProfile()[1];
 
 		BestResponseLPSolver brSolver = new BestResponseLPSolver(drpGame, 2, p2Strategy);
@@ -42,7 +42,7 @@ public class TestMain {
 
 		} catch (IloException e) {
 			e.printStackTrace();
-		}*/
+		}
 	}
 
 }
