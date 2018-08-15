@@ -149,7 +149,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 				//System.out.println("Strategy ID :" + strategyVarsBySequenceId.length);
 				//strategyVars = cplex.getValues(strategyVarsBySequenceId);
 				valueOfGame = playerToSolveFor == player1 ? -cplex.getObjValue() : cplex.getObjValue();
-				System.out.println("Best response game val : " + valueOfGame);
+				System.out.println("Attacker's utility : " + valueOfGame);
 			}
 		} catch (IloException e) {
 			e.printStackTrace();
@@ -261,7 +261,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 					if (sum > 0) {
 						map[playerToSolveFor][informationSetId][actionId] = cplex.getValue(strategyVarsByInformationSet[informationSetId].get(actionName)) / sum;
 					} else {
-						map[playerToSolveFor][informationSetId][actionId] = 0;
+						map[playerToSolveFor][informationSetId][actionId] = 0.5;
 					}
 					System.out.println(strategyVarsByInformationSet[informationSetId].get(actionName) + " :  " + map[playerToSolveFor][informationSetId][actionId]);
 				} catch (IloException e) {

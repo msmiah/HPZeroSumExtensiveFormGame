@@ -43,6 +43,12 @@ public class TestMain {
 		} catch (IloException e) {
 			e.printStackTrace();
 		}
+		
+		//double[][] tmpStrategy = brSolver.getStrategyProfile()[2];
+		/*
+		BestResponseLPSolver brSolverdf = new BestResponseLPSolver(drpGame, 1, p2Strategy);
+		brSolverdf.solveGame();
+		*/
 	}
 
 }

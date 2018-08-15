@@ -27,7 +27,7 @@ public class CreateTree {
 	private int mChaceInfoSetNo = 1;
 	private int mTotalFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
 	private int mOutcomeCnt;
-	private double[] modificationCost = {2.0,1.0,1.0,1.0};
+	private double[] modificationCost = {1.0,1.0,2.0,2.0};
 	
 	
 
@@ -72,26 +72,26 @@ public class CreateTree {
 	}
 	
 	public void setProbability() {
-		realSystemProbabilities.put("00",0.5);
-		realSystemProbabilities.put("01", 0.1);
-		realSystemProbabilities.put("10", 0.3);
+		realSystemProbabilities.put("00",0.2);
+		realSystemProbabilities.put("01", 0.3);
+		realSystemProbabilities.put("10", 0.4); 
 		realSystemProbabilities.put("11", 0.1);
-		honeypotProbabilites.put("00", 0.2);
-		honeypotProbabilites.put("01", 0.2);
-		honeypotProbabilites.put("10", 0.3);
-		honeypotProbabilites.put("11", 0.3);
+		honeypotProbabilites.put("00", 0.1);
+		honeypotProbabilites.put("01", 0.4);
+		honeypotProbabilites.put("10", 0.1);
+		honeypotProbabilites.put("11", 0.4);
 		
 	}
 	
 	public void setSystemValues() {
-		realSystemValues.put("00", 2);
-		realSystemValues.put("01", 2);
-		realSystemValues.put("10", 2);
-		realSystemValues.put("11", 2);
-		honeypotValues.put("00", 2);
-		honeypotValues.put("01", 2);
-		honeypotValues.put("10", 2);
-		honeypotValues.put("11",2);
+		realSystemValues.put("00", 3);
+		realSystemValues.put("01", 3);
+		realSystemValues.put("10", 3);
+		realSystemValues.put("11", 3);
+		honeypotValues.put("00", 3);
+		honeypotValues.put("01", 3);
+		honeypotValues.put("10", 3);
+		honeypotValues.put("11",3);
 		
 	}
 	
@@ -171,11 +171,20 @@ public class CreateTree {
 	private void movePlayerTwo(String playerOneAction,int flipPos, int palyerOneInfoSet, String natureAction) {
 		//System.out.println("P1:"+palyerOneInfoSet); 
 		ArrayList<String> actions = new ArrayList<>();
+		ArrayList<String> payoffActions = new ArrayList<>();
 		int len = playerOneAction.length();
+		// nature action is give to fix the payoff calculation
+		
+		String natureReal = natureAction.substring(1, Utils.REAL_HOST_FEATURES_NUM+1);
+		String natureHp= natureAction.substring(Utils.REAL_HOST_FEATURES_NUM+2, Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2);
+		payoffActions.add(natureReal);
+		payoffActions.add(natureHp);
+		
 		String realSysStr = playerOneAction.substring(1, Utils.REAL_HOST_FEATURES_NUM+1);
 		String hpStr = playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM+2, Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2);
 		actions.add(realSysStr);
 		actions.add(hpStr);
+		
 		String p2InfoStr = playerOneAction.substring(0,1)+ p2InformationSet.get(realSysStr)+
 				playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM+1,Utils.REAL_HOST_FEATURES_NUM+2)+p2InformationSet.get(hpStr);
 		int infosetNo = mBinarytoIntNumbers.get(playerOneAction); // playerOne action was used previously. For creating uncertainity for player2 new information set is used.
@@ -183,7 +192,7 @@ public class CreateTree {
 		//System.out.println(infoStr);
 		createGambitFile.createPlayerNode(Utils.PLAYER_NODE_NAME, Utils.PLAYER_TWO, infosetNo, playerOneAction, actions,
 				0);
-		setTerminalNode(actions,flipPos, playerOneAction, palyerOneInfoSet,natureAction);
+		setTerminalNode(payoffActions,flipPos, playerOneAction, palyerOneInfoSet,natureAction);
 	}
 
 	private double calculatePayoff(String playerOneAction) {
@@ -207,6 +216,7 @@ public class CreateTree {
 	private double getUtility(int index) {
 		if(index == -1)
 			return 0;
+		//System.out.println("index" + index);
 		return modificationCost[index];
 		
 	}
