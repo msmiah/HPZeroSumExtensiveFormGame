@@ -29,7 +29,7 @@ import utils.Utils;
 
 
 
-public class DefenderSequenceFormLPSolver<E> extends ZeroSumGameSolver {
+public class DefenderSequenceFormLPSolverBak2<E> extends ZeroSumGameSolver {
     Game game;
 
     int playerToSolveFor;
@@ -74,11 +74,11 @@ public class DefenderSequenceFormLPSolver<E> extends ZeroSumGameSolver {
     int[] sequenceIdForNodeP1; // indexed as [nodeId]. Returns the sequenceId of the last sequence belonging to Player 1 on the path to the node.
     int[] sequenceIdForNodeP2; // indexed as [nodeId]. Returns the sequenceId of the last sequence belonging to Player 2 on the path to the node.
     int cnt = 0;
-    public DefenderSequenceFormLPSolver(Game game, int playerToSolveFor) {
+    public DefenderSequenceFormLPSolverBak2(Game game, int playerToSolveFor) {
         this(game, playerToSolveFor, 1e-6);
     }
 
-    public DefenderSequenceFormLPSolver(Game game, int playerToSolveFor, double tol) {
+    public DefenderSequenceFormLPSolverBak2(Game game, int playerToSolveFor, double tol) {
         super(game);
         this.game = game;
         try {

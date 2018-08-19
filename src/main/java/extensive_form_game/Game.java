@@ -445,11 +445,11 @@ public class Game implements GameGenerator {
 		}
 		
 
-		
+		/*
 		for (int i = 0; i < numActions; i++) {
 			node.actions[i].probability = (double) node.actions[i].probability / sum;
 			//System.out.println("Normalize prob :" + node.actions[i].probability);
-		}
+		}*/
 		// the root node is the empty history
 	
 		root = node.nodeId;
