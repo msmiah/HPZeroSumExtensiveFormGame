@@ -567,7 +567,7 @@ public class SequenceFormLPSolver<E> extends ZeroSumGameSolver {
             lhs.addTerm(-it.value(), strategyVarsBySequenceId[it.key()]);
         }
 
-
+        System.out.println(lhs);
         dualConstraints.put(sequenceId, cplex.addGe(lhs, 0, "Dual"+sequenceId));
     }
 

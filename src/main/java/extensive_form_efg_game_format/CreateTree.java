@@ -27,7 +27,7 @@ public class CreateTree {
 	private int mChaceInfoSetNo = 1;
 	private int mTotalFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
 	private int mOutcomeCnt;
-	private double[] modificationCost = {1.0,1.0,0.0,2.0,2.0};
+	private double[] modificationCost = {1.0,1.0,0.0,1.0,1.0};
 	
 	
 
@@ -72,25 +72,25 @@ public class CreateTree {
 	}
 	
 	public void setProbability() {
-		realSystemProbabilities.put("00",0.3);
+		realSystemProbabilities.put("00",0.2);
 		realSystemProbabilities.put("01", 0.3);
 		realSystemProbabilities.put("10", 0.3); 
-		realSystemProbabilities.put("11", 0.1);
-		honeypotProbabilites.put("00", 0.25);
-		honeypotProbabilites.put("01", 0.25);
-		honeypotProbabilites.put("10", 0.25);
-		honeypotProbabilites.put("11", 0.25);
+		realSystemProbabilities.put("11", 0.2);
+		honeypotProbabilites.put("00", 0.5);
+		honeypotProbabilites.put("01", 0.1);
+		honeypotProbabilites.put("10", 0.1);
+		honeypotProbabilites.put("11", 0.3);
 		
 	}
 	
 	public void setSystemValues() {
-		realSystemValues.put("00", 3);
-		realSystemValues.put("01", 3);
-		realSystemValues.put("10", 3);
+		realSystemValues.put("00", 4);
+		realSystemValues.put("01", 5);
+		realSystemValues.put("10", 6);
 		realSystemValues.put("11", 3);
-		honeypotValues.put("00", 3);
-		honeypotValues.put("01", 3); 
-		honeypotValues.put("10", 3);
+		honeypotValues.put("00", 2);
+		honeypotValues.put("01", 2); 
+		honeypotValues.put("10", 2);
 		honeypotValues.put("11",3);
 		
 	}
@@ -148,13 +148,13 @@ public class CreateTree {
 			for (int j = 0; j < Utils.HONEYPOT_FEATURES_NUM; j++) {
 				if (j == 2)
 					continue;
-				int flipFeature = flipBits(infoNo, j+3);
+				int flipFeature = flipBits(infoNo, j);
 				String strFormat = "\""+"%"+ Utils.TOTAL_FEATUES_NUMBER_IN_GAME +"s\"";//TODO find a solution
 				//System.out.println(strFormat);
 				String flippedStr = String.format("%6s", Integer.toBinaryString(flipFeature)).replace(' ', '0');
 				//System.out.println(flippedStr);
 				actions.add(flippedStr);
-				flipPositions.add(j+3);
+				flipPositions.add(j);
 			}
 
 			createGambitFile.createPlayerNode(Utils.PLAYER_NODE_NAME, Utils.PLAYER_ONE, infoNo,
@@ -194,7 +194,7 @@ public class CreateTree {
 		//System.out.println(infoStr);
 		createGambitFile.createPlayerNode(Utils.PLAYER_NODE_NAME, Utils.PLAYER_TWO, infosetNo, playerOneAction, actions,
 				0);
-		setTerminalNode(payoffActions,flipPos, playerOneAction, palyerOneInfoSet,natureAction);
+		setTerminalNode(actions,flipPos, playerOneAction, palyerOneInfoSet,natureAction);
 	}
 
 	private double calculatePayoff(String playerOneAction) {
@@ -249,7 +249,7 @@ public class CreateTree {
 			if(isReal == 1) {
 				isReal = 0;
 				double payoff = realSystemValues.get(actions.get(k));
-				payoffs.add(-(cost + payoff));
+				payoffs.add(-(-cost + payoff));
 				payoffs.add(payoff);
 			}else {
 				isReal = 1;
