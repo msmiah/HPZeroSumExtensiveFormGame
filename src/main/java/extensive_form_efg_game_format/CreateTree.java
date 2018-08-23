@@ -27,7 +27,10 @@ public class CreateTree {
 	private int mChaceInfoSetNo = 1;
 	private int mTotalFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
 	private int mOutcomeCnt;
-	private double[] modificationCost = {1.0,1.0,0.0,1.0,1.0};
+	private double[] modificationCost = {1.0,1.0,0.0,2.0,2.0};
+	private boolean isModifyHoneypot = false;
+	private boolean isModifyRealSystem = true;
+	private boolean isModifyBothSystem = true;
 	
 	
 
@@ -74,23 +77,23 @@ public class CreateTree {
 	public void setProbability() {
 		realSystemProbabilities.put("00",0.2);
 		realSystemProbabilities.put("01", 0.3);
-		realSystemProbabilities.put("10", 0.3); 
-		realSystemProbabilities.put("11", 0.2);
-		honeypotProbabilites.put("00", 0.5);
-		honeypotProbabilites.put("01", 0.1);
-		honeypotProbabilites.put("10", 0.1);
+		realSystemProbabilities.put("10", 0.2); 
+		realSystemProbabilities.put("11", 0.3);
+		honeypotProbabilites.put("00", 0.2);
+		honeypotProbabilites.put("01", 0.3);
+		honeypotProbabilites.put("10", 0.2);
 		honeypotProbabilites.put("11", 0.3);
 		
 	}
 	
 	public void setSystemValues() {
-		realSystemValues.put("00", 4);
-		realSystemValues.put("01", 5);
-		realSystemValues.put("10", 6);
-		realSystemValues.put("11", 3);
-		honeypotValues.put("00", 2);
-		honeypotValues.put("01", 2); 
-		honeypotValues.put("10", 2);
+		realSystemValues.put("00", 5);
+		realSystemValues.put("01", 6);
+		realSystemValues.put("10", 3);
+		realSystemValues.put("11", 5);
+		honeypotValues.put("00", 3);
+		honeypotValues.put("01", 3); 
+		honeypotValues.put("10", 3);
 		honeypotValues.put("11",3);
 		
 	}
@@ -123,8 +126,9 @@ public class CreateTree {
 						realFlag = 1;
 						probability = realSystemProbabilities.get(realHostConfigList.get(j)) * honeypotProbabilites.get(realHostConfigList.get(k));
 						//System.out.println("Prob : " + probability);
-						sum += probability;
+						//sum += probability;
 					}
+					//probability = realSystemProbabilities.get(realHostConfigList.get(j)) * honeypotProbabilites.get(realHostConfigList.get(k));
 					String actionStr= realFlag +realHostConfigList.get(j)+ i + realHostConfigList.get(k);
 					//System.out.println(actionStr);
 					mChanceNodeProbablityList.add(probability);
@@ -145,7 +149,19 @@ public class CreateTree {
 			actions.add(mChnaceNodeActionList.get(i));
 			flipPositions.add(-1);
 			int infoNo = Integer.parseInt(mChnaceNodeActionList.get(i),2);
-			for (int j = 0; j < Utils.HONEYPOT_FEATURES_NUM; j++) {
+			int startIndex =0;
+			int numberOfFeatures =0;
+			if(isModifyBothSystem) {
+				numberOfFeatures = 5;
+				Utils.numOfDefenderActions = 5;
+			}else if(isModifyRealSystem) {
+				numberOfFeatures = 5;
+				startIndex = 3;
+			}else {
+				numberOfFeatures =2;
+			}
+			
+			for (int j = startIndex; j < numberOfFeatures; j++) {
 				if (j == 2)
 					continue;
 				int flipFeature = flipBits(infoNo, j);
@@ -176,7 +192,7 @@ public class CreateTree {
 		ArrayList<String> payoffActions = new ArrayList<>();
 		int len = playerOneAction.length();
 		// nature action is give to fix the payoff calculation
-		
+		 
 		String natureReal = natureAction.substring(1, Utils.REAL_HOST_FEATURES_NUM+1);
 		String natureHp= natureAction.substring(Utils.REAL_HOST_FEATURES_NUM+2, Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2);
 		payoffActions.add(natureReal);
@@ -186,11 +202,13 @@ public class CreateTree {
 		String hpStr = playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM+2, Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2);
 		actions.add(realSysStr);
 		actions.add(hpStr);
+		//String p2InfoSet = 1+ realSysStr + 0+ hpStr; // Making same infoset for both real and HP 
 		
 		String p2InfoStr = playerOneAction.substring(0,1)+ p2InformationSet.get(realSysStr)+
 				playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM+1,Utils.REAL_HOST_FEATURES_NUM+2)+p2InformationSet.get(hpStr);
-		int infosetNo = mBinarytoIntNumbers.get(playerOneAction); // playerOne action was used previously. For creating uncertainity for player2 new information set is used.
-		//int infosetNo = mBinarytoIntNumbers.get(p2InfoStr);
+		  int infosetNo = mBinarytoIntNumbers.get(p2InfoStr); // playerOne action was used previously. For creating uncertainity for player2 new information set is used.
+		 // infosetNo = infosetNo >> 3;
+		 //int infosetNo = mBinarytoIntNumbers.get(p2InfoStr);
 		//System.out.println(infoStr);
 		createGambitFile.createPlayerNode(Utils.PLAYER_NODE_NAME, Utils.PLAYER_TWO, infosetNo, playerOneAction, actions,
 				0);
@@ -249,7 +267,7 @@ public class CreateTree {
 			if(isReal == 1) {
 				isReal = 0;
 				double payoff = realSystemValues.get(actions.get(k));
-				payoffs.add(-(-cost + payoff));
+				payoffs.add(-(cost + payoff));
 				payoffs.add(payoff);
 			}else {
 				isReal = 1;

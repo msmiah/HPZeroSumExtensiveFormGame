@@ -357,7 +357,7 @@ public class DefenderSequenceFormLPSolverBak2<E> extends ZeroSumGameSolver {
             FileWriter fw = new FileWriter(filename);
             for (IloNumVar v : strategyVarsBySequenceId) {
             	if(v != null)
-            		cplex.add(v);
+            		//cplex.add(v);
             	    //System.out.println(v);
             		fw.write(v.getName() + ": \t" + cplex.getValue(v) + "\n");
             }
@@ -427,7 +427,7 @@ public class DefenderSequenceFormLPSolverBak2<E> extends ZeroSumGameSolver {
         CreateSequenceFormVariablesAndConstraints(game.getRoot(), rootSequence, new TIntHashSet(),new TIntHashSet(),1);
 
         CreateDualVariablesAndConstraints();
-      //  System.out.println(natureConstraints);
+       // System.out.println(natureConstraints);
         cplex.addEq(natureConstraints, rootSequence);
         SetObjective();
     }
@@ -511,7 +511,7 @@ public class DefenderSequenceFormLPSolverBak2<E> extends ZeroSumGameSolver {
                 CreateSequenceFormVariablesAndConstraints(action.getChildId(), v, visited, opponentVisited,natureProbability);
             }
             
-            //System.out.println("Sum : " + sum + " = " + natureProbability);
+            System.out.println("Sum : " + sum + " = " + natureProbability);
             primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, natureProbability,"Primal"+node.getInformationSet()));
           //primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, 1));
         } 
@@ -742,7 +742,7 @@ public class DefenderSequenceFormLPSolverBak2<E> extends ZeroSumGameSolver {
            // System.out.println("leaf node val :" + dualSequence);
             if (dualPayoffMatrix[dualSequence].containsKey(primalSequence)) {
             	//System.out.println("A:" +primalSequence  );
-                dualPayoffMatrix[dualSequence].put(primalSequence, leafValue - dualPayoffMatrix[dualSequence].get(primalSequence));
+                dualPayoffMatrix[dualSequence].put(primalSequence, -(dualPayoffMatrix[dualSequence].get(primalSequence)-leafValue));
             } else {
             	//System.out.println(primalSequence );
                 dualPayoffMatrix[dualSequence].put(primalSequence, leafValue);
