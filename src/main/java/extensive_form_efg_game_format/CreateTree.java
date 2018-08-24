@@ -27,10 +27,10 @@ public class CreateTree {
 	private int mChaceInfoSetNo = 1;
 	private int mTotalFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
 	private int mOutcomeCnt;
-	private double[] modificationCost = {1.0,1.0,0.0,2.0,2.0};
+	private double[] modificationCost = {1.0,2.0,0.0,2.0,2.0};
 	private boolean isModifyHoneypot = false;
-	private boolean isModifyRealSystem = true;
-	private boolean isModifyBothSystem = true;
+	private boolean isModifyRealSystem = false;
+	private boolean isModifyBothSystem = false;
 	
 	
 
@@ -56,6 +56,7 @@ public class CreateTree {
 			//System.out.println(tmp);
 			//mChanceNodeProbablityList.add(tmp);
 		}
+		setP2InformationSet();
 		setProbability();
 		generateBinaryRepresentation(0, Utils.REAL_HOST_FEATURES_NUM);
 		generateNatureActions();
@@ -75,21 +76,21 @@ public class CreateTree {
 	}
 	
 	public void setProbability() {
-		realSystemProbabilities.put("00",0.2);
+		realSystemProbabilities.put("00",0.3);
 		realSystemProbabilities.put("01", 0.3);
-		realSystemProbabilities.put("10", 0.2); 
-		realSystemProbabilities.put("11", 0.3);
-		honeypotProbabilites.put("00", 0.2);
+		realSystemProbabilities.put("10", 0.3); 
+		realSystemProbabilities.put("11", 0.1);
+		honeypotProbabilites.put("00", 0.3);
 		honeypotProbabilites.put("01", 0.3);
-		honeypotProbabilites.put("10", 0.2);
-		honeypotProbabilites.put("11", 0.3);
+		honeypotProbabilites.put("10", 0.3);
+		honeypotProbabilites.put("11", 0.1);
 		
 	}
 	
 	public void setSystemValues() {
 		realSystemValues.put("00", 5);
-		realSystemValues.put("01", 6);
-		realSystemValues.put("10", 3);
+		realSystemValues.put("01", 5);
+		realSystemValues.put("10", 5);
 		realSystemValues.put("11", 5);
 		honeypotValues.put("00", 3);
 		honeypotValues.put("01", 3); 
@@ -97,6 +98,7 @@ public class CreateTree {
 		honeypotValues.put("11",3);
 		
 	}
+	
 	
 	public static String reverseStr(String str) {
 	    if ( str == null ) {
@@ -202,11 +204,13 @@ public class CreateTree {
 		String hpStr = playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM+2, Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2);
 		actions.add(realSysStr);
 		actions.add(hpStr);
-		//String p2InfoSet = 1+ realSysStr + 0+ hpStr; // Making same infoset for both real and HP 
+		String p2InfoSet = getP2InofrmationSet(realSysStr+hpStr); // Making same infoset for both real and HP 
+		//System.out.println(p2InfoSet);
 		
-		String p2InfoStr = playerOneAction.substring(0,1)+ p2InformationSet.get(realSysStr)+
-				playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM+1,Utils.REAL_HOST_FEATURES_NUM+2)+p2InformationSet.get(hpStr);
-		  int infosetNo = mBinarytoIntNumbers.get(p2InfoStr); // playerOne action was used previously. For creating uncertainity for player2 new information set is used.
+		//String p2InfoStr = playerOneAction.substring(0,1)+ p2InformationSet.get(realSysStr)+
+			//	playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM+1,Utils.REAL_HOST_FEATURES_NUM+2)+p2InformationSet.get(hpStr);
+		//System.out.println(p2InfoStr);
+		  int infosetNo = mBinarytoIntNumbers.get(p2InfoSet); // playerOne action was used previously. For creating uncertainity for player2 new information set is used.
 		 // infosetNo = infosetNo >> 3;
 		 //int infosetNo = mBinarytoIntNumbers.get(p2InfoStr);
 		//System.out.println(infoStr);
@@ -281,6 +285,35 @@ public class CreateTree {
 		}
 
 	}
+	
+	public String getP2InofrmationSet(String action) {
+		return p2InformationSet.get(action);
+	}
+	
+	public void setP2InformationSet() {
+		
+		p2InformationSet.put("0000", "100000");
+		p2InformationSet.put("0001", "100001");
+		p2InformationSet.put("0010", "100010");
+		p2InformationSet.put("0011", "100011");
+		
+
+		p2InformationSet.put("0100", "100001");
+		p2InformationSet.put("0101", "101001");
+		p2InformationSet.put("0110", "101010");
+		p2InformationSet.put("0111", "101011");
+		
+		p2InformationSet.put("1000", "100010");
+		p2InformationSet.put("1001", "101010");
+		p2InformationSet.put("1010", "110010");
+		p2InformationSet.put("1011", "110011");
+		
+		p2InformationSet.put("1100", "100011");
+		p2InformationSet.put("1101", "101011");
+		p2InformationSet.put("1110", "110011");
+		p2InformationSet.put("1111", "111011");
+		
+	}
 
 	public int flipBits(int n, int k) {
 		int mask = 1 << k;
@@ -315,7 +348,8 @@ public class CreateTree {
 			while (temp.length() < n) {
 				temp = '0' + temp;
 			}
-			// System.out.println(temp);
+			/*System.out.println(temp);
+			
 			if (!p2InformationSet.containsKey(temp)) {
 				if (p2InformationSet.contains(reverseStr(temp))) {
 					p2InformationSet.put(temp, p2InformationSet.get(reverseStr(temp)));
@@ -323,7 +357,7 @@ public class CreateTree {
 					p2InformationSet.put(temp, temp);
 				}
 
-			}
+			}*/
 			realHostConfigList.add(temp);
 			// mBinarytoIntNumbers.put(temp, Integer.parseInt(temp, 2));
 			// mChnaceNodeActionList.add(temp);

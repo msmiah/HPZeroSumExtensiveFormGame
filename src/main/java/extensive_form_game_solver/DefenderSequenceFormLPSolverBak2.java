@@ -359,7 +359,11 @@ public class DefenderSequenceFormLPSolverBak2<E> extends ZeroSumGameSolver {
             	if(v != null)
             		//cplex.add(v);
             	    //System.out.println(v);
-            		fw.write(v.getName() + ": \t" + cplex.getValue(v) + "\n");
+            		
+            	    if(cplex.getValue(v) < 0.0005)
+            	    	fw.write(v.getName() + ": \t" + 0.0 + "\n");
+            	    else
+            		    fw.write(v.getName() + ": \t" + cplex.getValue(v) + "\n");
             }
             fw.close();
         } catch (IOException e) {
@@ -511,7 +515,7 @@ public class DefenderSequenceFormLPSolverBak2<E> extends ZeroSumGameSolver {
                 CreateSequenceFormVariablesAndConstraints(action.getChildId(), v, visited, opponentVisited,natureProbability);
             }
             
-            System.out.println("Sum : " + sum + " = " + natureProbability);
+           // System.out.println("Sum : " + sum + " = " + natureProbability);
             primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, natureProbability,"Primal"+node.getInformationSet()));
           //primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, 1));
         } 
@@ -833,7 +837,7 @@ public class DefenderSequenceFormLPSolverBak2<E> extends ZeroSumGameSolver {
        
         }
        
-        System.out.println(lhs);
+       // System.out.println(lhs);
         if(sequenceId == 0)
         	dualConstraints.put(sequenceId, cplex.addEq(lhs, 0, "Dual"+sequenceId));
         else {
@@ -913,7 +917,7 @@ public class DefenderSequenceFormLPSolverBak2<E> extends ZeroSumGameSolver {
     	
     	//cplex.addMaximize(cplex.prod(1, dualVars[0]));
     	//cplex.addMaximize(cplex.prod(1, opponentDualVars[0]));
-        System.out.println("Object :" + objective);
+       // System.out.println("Object :" + objective);
     	cplex.addMaximize(objective);
     }
 
