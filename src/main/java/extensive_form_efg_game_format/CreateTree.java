@@ -17,7 +17,7 @@ public class CreateTree {
 	private ArrayList<String> honeypotConfigLIst;
 	private ArrayList<Double> mChanceNodeProbablityList;
 	private CreateGambitEFGFile createGambitFile;
-	private Hashtable<String, Integer> mBinarytoIntNumbers;
+	private Hashtable<String, Integer> mBinarytoIntNumbers; 
 	public Hashtable<String, Integer> realSystemValues;
 	public Hashtable<String, Integer> honeypotValues;
 	public Hashtable<String, Double> realSystemProbabilities;
@@ -27,10 +27,10 @@ public class CreateTree {
 	private int mChaceInfoSetNo = 1;
 	private int mTotalFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
 	private int mOutcomeCnt;
-	private double[] modificationCost = {1.0,2.0,0.0,2.0,2.0};
+	private double[] modificationCost = {10.0,10.0,0.0,50.0,50.0};
 	private boolean isModifyHoneypot = false;
 	private boolean isModifyRealSystem = false;
-	private boolean isModifyBothSystem = false;
+	private boolean isModifyBothSystem =  false;
 	
 	
 
@@ -56,7 +56,7 @@ public class CreateTree {
 			//System.out.println(tmp);
 			//mChanceNodeProbablityList.add(tmp);
 		}
-		setP2InformationSet();
+		//setP2InformationSet();
 		setProbability();
 		generateBinaryRepresentation(0, Utils.REAL_HOST_FEATURES_NUM);
 		generateNatureActions();
@@ -77,9 +77,9 @@ public class CreateTree {
 	
 	public void setProbability() {
 		realSystemProbabilities.put("00",0.3);
-		realSystemProbabilities.put("01", 0.3);
+		realSystemProbabilities.put("01", 0.2);
 		realSystemProbabilities.put("10", 0.3); 
-		realSystemProbabilities.put("11", 0.1);
+		realSystemProbabilities.put("11", 0.2);
 		honeypotProbabilites.put("00", 0.3);
 		honeypotProbabilites.put("01", 0.3);
 		honeypotProbabilites.put("10", 0.3);
@@ -88,15 +88,15 @@ public class CreateTree {
 	}
 	
 	public void setSystemValues() {
-		realSystemValues.put("00", 5);
-		realSystemValues.put("01", 5);
-		realSystemValues.put("10", 5);
-		realSystemValues.put("11", 5);
-		honeypotValues.put("00", 3);
-		honeypotValues.put("01", 3); 
-		honeypotValues.put("10", 3);
-		honeypotValues.put("11",3);
-		
+		realSystemValues.put("00", 500);
+		realSystemValues.put("01", 500);
+		realSystemValues.put("10", 500);
+		realSystemValues.put("11", 500);
+		honeypotValues.put("00", 100);
+		honeypotValues.put("01", 100); 
+		honeypotValues.put("10", 100);
+		honeypotValues.put("11",100);
+		 
 	}
 	
 	
@@ -133,6 +133,7 @@ public class CreateTree {
 					//probability = realSystemProbabilities.get(realHostConfigList.get(j)) * honeypotProbabilites.get(realHostConfigList.get(k));
 					String actionStr= realFlag +realHostConfigList.get(j)+ i + realHostConfigList.get(k);
 					//System.out.println(actionStr);
+					setP2InformationSet(realHostConfigList.get(j), realHostConfigList.get(k));
 					mChanceNodeProbablityList.add(probability);
 					mBinarytoIntNumbers.put(actionStr, Integer.parseInt(actionStr, 2));
 					mChnaceNodeActionList.add(actionStr);
@@ -167,9 +168,9 @@ public class CreateTree {
 				if (j == 2)
 					continue;
 				int flipFeature = flipBits(infoNo, j);
-				String strFormat = "\""+"%"+ Utils.TOTAL_FEATUES_NUMBER_IN_GAME +"s\"";//TODO find a solution
-				//System.out.println(strFormat);
-				String flippedStr = String.format("%6s", Integer.toBinaryString(flipFeature)).replace(' ', '0');
+				String strFormat = "%"+ (Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2) +"s";//TODO find a solution
+				System.out.println(strFormat);
+				String flippedStr = String.format(strFormat, Integer.toBinaryString(flipFeature)).replace(' ', '0');
 				//System.out.println(flippedStr);
 				actions.add(flippedStr);
 				flipPositions.add(j);
@@ -202,6 +203,7 @@ public class CreateTree {
 		
 		String realSysStr = playerOneAction.substring(1, Utils.REAL_HOST_FEATURES_NUM+1);
 		String hpStr = playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM+2, Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2);
+		//setP2InformationSet(realSysStr, hpStr);
 		actions.add(realSysStr);
 		actions.add(hpStr);
 		String p2InfoSet = getP2InofrmationSet(realSysStr+hpStr); // Making same infoset for both real and HP 
@@ -290,6 +292,20 @@ public class CreateTree {
 		return p2InformationSet.get(action);
 	}
 	
+	public void setP2InformationSet(String realHost, String hp) {
+		
+		String realNetworkConfig = realHost+ hp;
+		String imperfectNetwrokConfig  = hp + realHost;
+		String infoSet = 1 + realHost+0+hp;
+		if(!p2InformationSet.contains(realNetworkConfig)) {
+			//System.out.println(realNetworkConfig);
+			p2InformationSet.put(realNetworkConfig, infoSet);
+		}
+		if(!realHost.equals(hp) && !p2InformationSet.contains(imperfectNetwrokConfig))
+			p2InformationSet.put(imperfectNetwrokConfig,infoSet);
+
+	}
+	
 	public void setP2InformationSet() {
 		
 		p2InformationSet.put("0000", "100000");
@@ -364,15 +380,5 @@ public class CreateTree {
 			generateBinaryRepresentation(i + 1, n);
 		}
 	}
-/*
-	public static void main(String[] args) {
-		CreateTree tree = new CreateTree();
-		tree.init();
-		// System.out.println(Integer.toBinaryString(tree.flipBits(0,1)));
-		tree.movePlayerOne();
-		tree.closeFile();
-		// tree.generateBinaryRepresentation(0, 2);
-		// double[] arr = tree.getRandomProbability(5);
 
-	}*/
 }
