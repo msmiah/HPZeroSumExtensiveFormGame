@@ -27,7 +27,7 @@ public class CreateTree {
 	private int mChaceInfoSetNo = 1;
 	private int mTotalFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
 	private int mOutcomeCnt;
-	private double[] modificationCost = {10.0,10.0,0.0,50.0,50.0};
+	private double[] modificationCost = {10.0,10, 0.0, 50.0,50};
 	private boolean isModifyHoneypot = false;
 	private boolean isModifyRealSystem = false;
 	private boolean isModifyBothSystem =  false;
@@ -76,27 +76,142 @@ public class CreateTree {
 	}
 	
 	public void setProbability() {
+		
+
 		realSystemProbabilities.put("00",0.3);
-		realSystemProbabilities.put("01", 0.2);
+		realSystemProbabilities.put("01", 0.3);
 		realSystemProbabilities.put("10", 0.3); 
-		realSystemProbabilities.put("11", 0.2);
-		honeypotProbabilites.put("00", 0.3);
+		realSystemProbabilities.put("11", 0.1);
+		
+
+		honeypotProbabilites.put("00", 0.1);
 		honeypotProbabilites.put("01", 0.3);
 		honeypotProbabilites.put("10", 0.3);
-		honeypotProbabilites.put("11", 0.1);
+		honeypotProbabilites.put("11", 0.3);
 		
+		/*
+		realSystemProbabilities.put("000",0.1);
+		realSystemProbabilities.put("001", 0.1);
+		realSystemProbabilities.put("010", 0.1); 
+		realSystemProbabilities.put("011", 0.1);
+		realSystemProbabilities.put("100",0.2);
+		realSystemProbabilities.put("101", 0.2);
+		realSystemProbabilities.put("110", 0.1); 
+		realSystemProbabilities.put("111", 0.1);
+		
+		honeypotProbabilites.put("000", 0.1);
+		honeypotProbabilites.put("001", 0.1);
+		honeypotProbabilites.put("010", 0.1);
+		honeypotProbabilites.put("011", 0.1);
+		honeypotProbabilites.put("100", 0.1);
+		honeypotProbabilites.put("101", 0.1);
+		honeypotProbabilites.put("110", 0.2);
+		honeypotProbabilites.put("111", 0.2);
+		*/
+		/*
+		realSystemProbabilities.put("0000",0.1);
+		realSystemProbabilities.put("0001", 0.1);
+		realSystemProbabilities.put("0010", 0.1); 
+		realSystemProbabilities.put("0011", 0.1);
+		realSystemProbabilities.put("0100",0.1);
+		realSystemProbabilities.put("0101", 0.1);
+		realSystemProbabilities.put("0110", 0.1); 
+		realSystemProbabilities.put("0111", 0.1);
+		realSystemProbabilities.put("1000",0.1);
+		realSystemProbabilities.put("1001", 0.1);
+		realSystemProbabilities.put("1010", 0.0); 
+		realSystemProbabilities.put("1011", 0.0);
+		realSystemProbabilities.put("1100",0.0);
+		realSystemProbabilities.put("1101", 0.0);
+		realSystemProbabilities.put("1110", 0.0); 
+		realSystemProbabilities.put("1111", 0.0);
+		
+		honeypotProbabilites.put("0000", 0.0);
+		honeypotProbabilites.put("0001", 0.0);
+		honeypotProbabilites.put("0010", 0.0);
+		honeypotProbabilites.put("0011", 0.0);
+		honeypotProbabilites.put("0100", 0.0);
+		honeypotProbabilites.put("0101", 0.0);
+		honeypotProbabilites.put("0110", 0.0);
+		honeypotProbabilites.put("0111", 0.0);
+		honeypotProbabilites.put("1000", 0.0);
+		honeypotProbabilites.put("1001", 0.0);
+		honeypotProbabilites.put("1010", 1.0);
+		honeypotProbabilites.put("1011", 0.0);
+		honeypotProbabilites.put("1100", 0.0);
+		honeypotProbabilites.put("1101", 0.0);
+		honeypotProbabilites.put("1110", 0.0);
+		honeypotProbabilites.put("1111", 0.0);
+		*/
 	}
 	
 	public void setSystemValues() {
+		
+
 		realSystemValues.put("00", 500);
 		realSystemValues.put("01", 500);
 		realSystemValues.put("10", 500);
 		realSystemValues.put("11", 500);
+		
+
 		honeypotValues.put("00", 100);
 		honeypotValues.put("01", 100); 
 		honeypotValues.put("10", 100);
-		honeypotValues.put("11",100);
-		 
+		honeypotValues.put("11", 100);
+		
+		/*
+		realSystemValues.put("000", 500);
+		realSystemValues.put("001", 500);
+		realSystemValues.put("010", 500);
+		realSystemValues.put("011", 500);
+		realSystemValues.put("100", 500);
+		realSystemValues.put("101", 500);
+		realSystemValues.put("110", 500);
+		realSystemValues.put("111", 500);
+		
+		honeypotValues.put("000", 100);
+		honeypotValues.put("001", 100); 
+		honeypotValues.put("010", 100);
+		honeypotValues.put("011",100);
+		honeypotValues.put("100", 100);
+		honeypotValues.put("101", 100); 
+		honeypotValues.put("110", 100);
+		honeypotValues.put("111",100);*/
+		/*
+		realSystemValues.put("0000", 500);
+		realSystemValues.put("0001", 500);
+		realSystemValues.put("0010", 500);
+		realSystemValues.put("0011", 500);
+		realSystemValues.put("0100", 500);
+		realSystemValues.put("0101", 500);
+		realSystemValues.put("0110", 500);
+		realSystemValues.put("0111", 500);
+		realSystemValues.put("1000", 500);
+		realSystemValues.put("1001", 500);
+		realSystemValues.put("1010", 500);
+		realSystemValues.put("1011", 500);
+		realSystemValues.put("1100", 500);
+		realSystemValues.put("1101", 500);
+		realSystemValues.put("1110", 500);
+		realSystemValues.put("1111", 500);
+		
+		honeypotValues.put("0000", 100);
+		honeypotValues.put("0001", 100); 
+		honeypotValues.put("0010", 100);
+		honeypotValues.put("0011",100);
+		honeypotValues.put("0100", 100);
+		honeypotValues.put("0101", 100); 
+		honeypotValues.put("0110", 100);
+		honeypotValues.put("0111",100);
+		honeypotValues.put("1000", 100);
+		honeypotValues.put("1001", 100); 
+		honeypotValues.put("1010", 100);
+		honeypotValues.put("1011",100);
+		honeypotValues.put("1100", 100);
+		honeypotValues.put("1101", 100); 
+		honeypotValues.put("1110", 100);
+		honeypotValues.put("1111",100);
+		*/
 	}
 	
 	
@@ -155,21 +270,21 @@ public class CreateTree {
 			int startIndex =0;
 			int numberOfFeatures =0;
 			if(isModifyBothSystem) {
-				numberOfFeatures = 5;
-				Utils.numOfDefenderActions = 5;
+				numberOfFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME+1;
+				Utils.numOfDefenderActions = Utils.TOTAL_FEATUES_NUMBER_IN_GAME + 1;
 			}else if(isModifyRealSystem) {
-				numberOfFeatures = 5;
-				startIndex = 3;
+				numberOfFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME + 1;
+				startIndex = Utils.REAL_HOST_FEATURES_NUM;
 			}else {
-				numberOfFeatures =2;
+				numberOfFeatures =Utils.REAL_HOST_FEATURES_NUM;
 			}
 			
 			for (int j = startIndex; j < numberOfFeatures; j++) {
-				if (j == 2)
+				if (j == Utils.REAL_HOST_FEATURES_NUM)
 					continue;
 				int flipFeature = flipBits(infoNo, j);
-				String strFormat = "%"+ (Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2) +"s";//TODO find a solution
-				System.out.println(strFormat);
+				String strFormat = "%"+ (Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2) +"s";
+				//System.out.println(strFormat);
 				String flippedStr = String.format(strFormat, Integer.toBinaryString(flipFeature)).replace(' ', '0');
 				//System.out.println(flippedStr);
 				actions.add(flippedStr);
@@ -261,7 +376,7 @@ public class CreateTree {
 		double cost = getUtility(flipPos);
 		//System.out.println("pos" + flipPos + " payoff " + payoff);
 		int isReal = Integer.parseInt(playerOneAction, 2);
-		isReal = isReal >> 5;
+		isReal = isReal >> Utils.TOTAL_FEATUES_NUMBER_IN_GAME+1;
 		boolean isEqual = isActionsEqual(actions);
 		ArrayList<Double> payoffs = new ArrayList<>();
 		for (int k = 0; k < actions.size(); k++) {
@@ -305,7 +420,7 @@ public class CreateTree {
 			p2InformationSet.put(imperfectNetwrokConfig,infoSet);
 
 	}
-	
+	/*
 	public void setP2InformationSet() {
 		
 		p2InformationSet.put("0000", "100000");
@@ -329,7 +444,7 @@ public class CreateTree {
 		p2InformationSet.put("1110", "110011");
 		p2InformationSet.put("1111", "111011");
 		
-	}
+	}*/
 
 	public int flipBits(int n, int k) {
 		int mask = 1 << k;
@@ -364,8 +479,8 @@ public class CreateTree {
 			while (temp.length() < n) {
 				temp = '0' + temp;
 			}
-			/*System.out.println(temp);
-			
+			//System.out.println(temp);
+			/*
 			if (!p2InformationSet.containsKey(temp)) {
 				if (p2InformationSet.contains(reverseStr(temp))) {
 					p2InformationSet.put(temp, p2InformationSet.get(reverseStr(temp)));

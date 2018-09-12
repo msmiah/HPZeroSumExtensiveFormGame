@@ -22,6 +22,7 @@ public class TestMain {
 
 		Game drpGame = new Game();
 		drpGame.createGameFromFileZerosumPackageFormat("hsg_4_features.efg");
+		
 		DefenderSequenceFormLPApproximationSolver equilibriumSolver = new DefenderSequenceFormLPApproximationSolver(drpGame, 1);
 		// AttackerSequenceFormLPSolver equilibriumSolver = new AttackerSequenceFormLPSolver(drpGame, 2);
 	  //SequenceFormLPSolver equilibriumSolver = new SequenceFormLPSolver(drpGame, 2);

@@ -320,7 +320,7 @@ public class Game implements GameGenerator {
 			}
 			node.actions[i] = action;
 		}
-
+			//System.out.println("Info : " + node.informationSet + "node Id: " + node.nodeId);
 			informationSets[node.player - 1][node.informationSet].add(node.nodeId);
 			informationSetsSeen[node.player - 1][node.informationSet] = true;
 

@@ -75,7 +75,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
     int[] sequenceIdForNodeP1; // indexed as [nodeId]. Returns the sequenceId of the last sequence belonging to Player 1 on the path to the node.
     int[] sequenceIdForNodeP2; // indexed as [nodeId]. Returns the sequenceId of the last sequence belonging to Player 2 on the path to the node.
     int cnt = 0;
-    double[] tempModificationCost= {0,0,10.0,10.0,50.0,50.0};
+    double[] tempModificationCost= {0.0, 10.0, 10.0, 50.0, 50.0,};
     public DefenderSequenceFormLPApproximationSolver(Game game, int playerToSolveFor) {
         this(game, playerToSolveFor, 1e-6);
     }
@@ -578,10 +578,9 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
         	System.out.println("Obj " + objective );
         }*/
        
-        for (int sequenceId = 1; sequenceId < numDualSequences; sequenceId++) {
+        for (int sequenceId = 1; sequenceId < numDualSequences; sequenceId+=2) {
         	
              CreateDualConstraintForSequence(sequenceId);
-             sequenceId++;
         }
         
        
@@ -743,26 +742,23 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
     private void CreateDualConstraintForSequence(int sequenceId) throws IloException{
         IloLinearNumExpr lhs = cplex.linearNumExpr();
         IloLinearNumExpr temp =  cplex.linearNumExpr();
-        if(sequenceId > 90)
-        	return;
+       // if(sequenceId > 300)
+        	//return;
+        /*
         double prob = 0;
         
         TIntDoubleIterator itprob = sequenceFormDualProbMatrix[sequenceId].iterator();
-        //System.out.println(sequenceId+ "Szie :" + sequenceFormDualProbMatrix[sequenceId+1].size());
         for ( int i = sequenceFormDualProbMatrix[sequenceId].size(); i-- > 0; ) {
             itprob.advance();
-           // System.out.println(sequenceId + "Prob :" + itprob.value());
             prob +=itprob.value();
         }
         
         TIntDoubleIterator itprobplus = sequenceFormDualProbMatrix[sequenceId+1].iterator();
-        //System.out.println(sequenceId+ "Szie :" + sequenceFormDualProbMatrix[sequenceId+1].size());
         for ( int i = sequenceFormDualProbMatrix[sequenceId+1].size(); i-- > 0; ) {
         	itprobplus.advance();
         	prob+= itprobplus.value();
-           // System.out.println((sequenceId+1) + "Prob plus :" + itprobplus.value());
         }
-        
+        */
         
         TIntDoubleIterator it = dualPayoffMatrix[sequenceId].iterator();
         for ( int i = dualPayoffMatrix[sequenceId].size(); i-- > 0; ) {
@@ -775,13 +771,11 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
         TIntDoubleIterator it2 = dualPayoffMatrix[sequenceId+1].iterator();
         for ( int i = dualPayoffMatrix[sequenceId+1].size(); i-- > 0; ) {
             it2.advance();
-           // dualVarUpperBoundSum +=(it.value()/2.0);
             lhs.addTerm(-it2.value(), strategyVarsBySequenceId[it2.key()]);
             temp.addTerm(1, strategyVarsBySequenceId[it2.key()]);
        
         }
-       
-       // System.out.println(lhs);
+        System.out.println(sequenceId + " " + lhs);
         if(sequenceId == 0)
         	dualConstraints.put(sequenceId, cplex.addEq(lhs, 0, "Dual"+sequenceId));
         else {
@@ -914,6 +908,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
     public double[][][] getStrategyProfile() {
         double[][][] profile = new double[3][][];
         profile[playerToSolveFor] = new double [numPrimalInformationSets][];
+        double prob = 0.0;
         //player two has 15 information set thats why minus 2 added
         //System.out.println("Num of Primal set"+  numPrimalInformationSets);
         double cost = 0.0;
@@ -949,8 +944,10 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 						profile[playerToSolveFor][informationSetId][actionId] = 1.0
 								/ game.getNumActionsAtInformationSet(playerToSolveFor, informationSetId);
 					}
-					if (profile[playerToSolveFor][informationSetId][actionId] > 0.00005)
+					if (profile[playerToSolveFor][informationSetId][actionId] > 0.00005) {
 					      cost += (tempModificationCost[actionId] * profile[playerToSolveFor][informationSetId][actionId]);
+					      prob += profile[playerToSolveFor][informationSetId][actionId];
+					}
 					
 					//System.out.println(strategyVarsByInformationSet[informationSetId].get(actionName) + " :  "
 						//	+ profile[playerToSolveFor][informationSetId][actionId]);
@@ -959,7 +956,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 				}
 			}
 		}
-        System.out.println("Cost :" + cost);
+        System.out.println("Cost :" + cost + " Prob :" + prob);
         return profile;
     }
 }

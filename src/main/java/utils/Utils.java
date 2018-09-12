@@ -17,10 +17,10 @@ public class Utils {
 	public static final String TERMINAL_NODE_NAME = "t";
 	
 	
-	public static int numOfDefenderActions = 3;
-	public static final int NUM_INFO_SET_PLAYER_1=64;
-	public static final int NUM_INFO_SET_PLAYER_2 = 64;
-	public static final int  TOTAL_NUMBER_OF_NODE = 357;
+	public static int numOfDefenderActions = REAL_HOST_FEATURES_NUM+1;
+	public static final int NUM_INFO_SET_PLAYER_1=100000;
+	public static final int NUM_INFO_SET_PLAYER_2 = 100000;
+	public static final int  TOTAL_NUMBER_OF_NODE = 100000;//357;
 	public static final double PLAYER_ONE_MAX_VAL = 5000;
 
 	
