@@ -17,7 +17,8 @@ public class GameState {
 	TIntArrayList nodeIdHistory;
 	
 	private boolean isLeaf;
-	private double value;
+	private double valueP1;
+	private double valueP2;
 	private int currentInformationSetId;
 	private int originalInformationSetId;
 	private int currentPlayer;
@@ -115,17 +116,26 @@ public class GameState {
 	}
 
 
-
+/*
 	public double getValue() {
 		return value;
 	}
+*/
 
-
-
-	public void setValue(double value) {
-		this.value = value;
+	public double getValueP1() {
+		return valueP1;
+	}
+	public double getValueP2() {
+		return valueP2;
 	}
 
+	public void setValueP1(double value) {
+		this.valueP1 = value;
+	}
+
+	public void setValueP2(double value) {
+		this.valueP2 = value;
+	}
 
 
 	public int getCurrentNodeId() {

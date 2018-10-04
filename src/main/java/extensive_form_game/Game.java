@@ -11,6 +11,7 @@ import org.apache.commons.lang3.*;
 import org.apache.commons.math3.distribution.NormalDistribution;
 
 import au.com.bytecode.opencsv.CSVReader;
+import extensive_form_game_abstraction.SignalAbstraction;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TObjectDoubleMap;
@@ -152,8 +153,10 @@ public class Game implements GameGenerator {
 	
 	private boolean hasAbstraction;
 	private int[][] abstraction; 
+	private int[][][] actionAbstractionMapping;
 	private HashMap<String, Double>[] systemProbability = new HashMap[2];
-
+	private boolean useIdentityActionMap;
+	SignalAbstraction signalAbstraction;
 	
 	public Game() {
 		informationSets = new TIntArrayList [2] [];
@@ -178,7 +181,56 @@ public class Game implements GameGenerator {
 		//createGameFromFile(filename);
 	}
 	
+	public void applySignalAbstraction(SignalAbstraction signalAbstraction) {
+		for (int nodeId = 0; nodeId < getNumNodes(); nodeId++) {
+			Node node = getNodeById(nodeId);
+			if (node.getPlayer() == 1 || node.getPlayer() == 2) {
+				// Get observed nature actions, then concatenate observed player actions
+				List<String> observedActions = extractObservedNatureActionsFromNodeName(node.getName(), node.getPlayer());
+				observedActions.addAll(extractObservedPlayerActionsFromNodeName(node.getName(), node.getPlayer()));
+				// Uniquely identify each information set by the (out of order) list of observed actions. This works for signal-decomposable games.
+				observedActionsToInformationSetId[node.getPlayer()].put(observedActions, node.getInformationSet());
+			}
+		}
+		this.signalAbstraction = signalAbstraction;
+		abstraction = new int[3][];
+		abstraction[1] = new int[getNumInformationSetsPlayer1()];
+		abstraction[2]= new int[getNumInformationSetsPlayer2()];
+		applySignalAbstractionRecursive(getRoot(), new ArrayList<Integer>());
+		hasAbstraction = true;
+		useIdentityActionMap = true;
+	}
 	
+	private void applySignalAbstractionRecursive(int currentNodeId, List<Integer> natureIndices) {
+		Node node = getNodeById(currentNodeId);
+		if (node.isLeaf()) {
+			return;
+		}
+		
+		if (node.getPlayer() == 1 || node.getPlayer() ==2) {
+			List<String> natureSignals = extractObservedNatureActionsFromNodeName(node.getName(), node.getPlayer());
+			List<String> abstractNatureSignals = signalAbstraction.getAbstractSignalsByName(natureSignals);
+			List<String> observedPlayerActions = extractObservedPlayerActionsFromNodeName(node.getName(), node.getPlayer());
+			// Make abstract observed list
+			List<String> abstractActions = new ArrayList<String>(abstractNatureSignals);
+			abstractActions.addAll(observedPlayerActions);
+			int abstractInformationSetId = observedActionsToInformationSetId[node.getPlayer()].get(abstractActions);
+			node.setAbstractInformationSet(abstractInformationSetId);
+			if (node.getInformationSet() != abstractInformationSetId) {
+				int t = 1;
+			}
+			abstraction[node.getPlayer()][node.getInformationSet()] = abstractInformationSetId;
+		}
+		for (Action action : node.getActions()) {
+			if (node.getPlayer() == 0) {
+				natureIndices.add(depth);
+				applySignalAbstractionRecursive(action.getChildId(), natureIndices);
+				natureIndices.remove(natureIndices.size()-1);
+			} else {
+				applySignalAbstractionRecursive(action.getChildId(), natureIndices);
+			}			
+		}
+	}
 	
 	public void createGameFromFileZerosumPackageFormat(String filename) {
 		//BufferedReader in = null;
@@ -719,7 +771,8 @@ public class Game implements GameGenerator {
 		
 		if (newNode.isLeaf()) {
 			gs.setIsLeaf(true);
-			gs.setValue(newNode.getValue());
+			gs.setValueP1(newNode.getPlayerOneValue());
+			gs.setValueP2(newNode.getPlayerTwoValue());
 		} else {
 			gs.setIsLeaf(false);
 		}
@@ -740,6 +793,49 @@ public class Game implements GameGenerator {
 			return numInformationSetsPlayer2;
 		}
 		return 0;
+	}
+	@Override
+	public boolean informationSetAbstracted(int player, int informationSetId) {
+		if (hasAbstraction) {
+			return informationSetId != abstraction[player][informationSetId];
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public int getAbstractInformationSetId(int player, int informationSetId) {
+		if (hasAbstraction) {
+			return abstraction[player][informationSetId];
+		} else {
+			return informationSetId;
+		}
+	}
+
+	@Override
+	public void addInformationSetAbstraction(int[][] informationSetAbstraction,	int[][][] actionMapping) {
+		this.hasAbstraction = true;
+		this.useIdentityActionMap = false;
+		this.abstraction = informationSetAbstraction;
+		this.actionAbstractionMapping = actionMapping;
+	}
+
+	@Override
+	public int getAbstractActionMapping(int player, int originalInformationSetId, int originalAction) {
+		if (informationSetAbstracted(player, originalInformationSetId) && !useIdentityActionMap) {
+			return actionAbstractionMapping[player][originalInformationSetId][originalAction];
+		} else {
+			return originalAction;
+		}
+	}
+	
+	@Override
+	public int getAbstractActionMapping(GameState gs, int action) {
+		if (informationSetAbstracted(gs.getCurrentPlayer(), gs.getOriginalInformationSetId()) && !useIdentityActionMap) {
+			return actionAbstractionMapping[gs.getCurrentPlayer()][gs.getOriginalInformationSetId()][action];
+		} else {
+			return action;
+		}
 	}
 
 

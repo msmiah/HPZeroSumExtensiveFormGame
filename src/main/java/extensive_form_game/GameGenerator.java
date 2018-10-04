@@ -41,6 +41,14 @@ public interface GameGenerator {
 	 * @param strategyProfile indexed as strategyProfile[player][informationSetId][actionId]
 	 * @return
 	 */
+	// Abstraction methods
+	public void addInformationSetAbstraction(int[][] informationSetAbstraction, int[][][] actionMapping);
+	public boolean informationSetAbstracted(int player, int informationSetId);
+	public int getAbstractInformationSetId(int player, int informationSetId);
+	public int getAbstractActionMapping(int player, int originalInformationSetId, int originalActionId);
+	public int getAbstractActionMapping(GameState gs, int action);
+		
+	
 	public double computeGameValueForStrategies(double[][][] strategyProfile);
 	
 	public double getLargestPayoff();
