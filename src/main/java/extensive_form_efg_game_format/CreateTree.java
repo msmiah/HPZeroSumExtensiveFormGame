@@ -27,7 +27,7 @@ public class CreateTree {
 	private int mChaceInfoSetNo = 1;
 	private int mTotalFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
 	private int mOutcomeCnt;
-	private double[] modificationCost = {1.0,1.0, 0.0, 3.0,3.0};
+	private double[] modificationCost = {1.0,1.0, 0.0, 1.0,1.0};
 	private boolean isModifyHoneypot = false;
 	private boolean isModifyRealSystem = false;
 	private boolean isModifyBothSystem =  true;
@@ -79,8 +79,8 @@ public class CreateTree {
 		
         
 		realSystemProbabilities.put("00",0.3);
-		realSystemProbabilities.put("01", 0.1);
-		realSystemProbabilities.put("10", 0.3); 
+		realSystemProbabilities.put("01", 0.2);
+		realSystemProbabilities.put("10", 0.2); 
 		realSystemProbabilities.put("11", 0.3);
 		
 

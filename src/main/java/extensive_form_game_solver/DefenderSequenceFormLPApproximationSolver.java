@@ -54,6 +54,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 	TObjectIntMap<String>[] sequenceIdByInformationSetAndActionP2; // indexed as [informationSetId][action.name]
 	IloNumVar[] strategyVarsBySequenceId;
 	IloNumVar[] opponentStrategyVarsBySequenceId;
+	IloNumVar[] zVarsBySequenceId;
 	int[] realValueBySequenceId;
 	int numSequencesP1;
 	int numSequencesP2;
@@ -179,6 +180,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 		if (playerToSolveFor == 1) {
 			strategyVarsBySequenceId = new IloNumVar[game.getNumSequencesP1()];
 			opponentStrategyVarsBySequenceId = new IloNumVar[game.getNumSequencesP2()];
+			zVarsBySequenceId = new IloNumVar[game.getNumSequencesP2()];
 			realValueBySequenceId = new int[game.getNumSequencesP1()];
 		} else {
 			strategyVarsBySequenceId = new IloNumVar[game.getNumSequencesP2()];
@@ -354,8 +356,8 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 			FileWriter fw = new FileWriter(filename);
 			for (IloNumVar v : strategyVarsBySequenceId) {
 				if (v != null)
-					// cplex.add(v);
-					// System.out.println(v);
+					//cplex.add(v);
+					//System.out.println(v);
 
 					if (cplex.getValue(v) < 0.00005)
 						fw.write(v.getName() + ": \t" + 0.0 + "\n");
@@ -430,7 +432,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 		strategyVarsBySequenceId[0] = rootSequence;
 
 		System.out.println("************************ Equation no 4  ************************************");
-		CreateSequenceFormVariablesAndConstraints(game.getRoot(), rootSequence, new TIntHashSet(), new TIntHashSet(),
+		CreateSequenceFormVariablesAndConstraints(game.getRoot(),0, rootSequence, rootSequence, new TIntHashSet(), new TIntHashSet(),
 				1);
 
 		CreateDualVariablesAndConstraints();
@@ -500,7 +502,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 	 *            keeps track of which information sets have been visited
 	 * @throws IloException
 	 */
-	private void CreateSequenceFormVariablesAndConstraints(int currentNodeId, IloNumVar parentSequence, TIntSet visited,
+	private void CreateSequenceFormVariablesAndConstraints(int currentNodeId, int seqId, IloNumVar parentSequence, IloNumVar childSequence, TIntSet visited,
 			TIntSet opponentVisited, double natureProbability) throws IloException {
 		Node node = game.getNodeById(currentNodeId);
 		if (null == node)
@@ -509,7 +511,46 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 		if (node.isLeaf()) { // Objective function
 			double value = playerToSolveFor == player1 ? node.getPlayerOneValue() : node.getPlayerTwoValue();
 			
-			objective.addTerm(natureProbability*value, parentSequence);
+			
+			/* Linearizing constraints*/
+
+			IloLinearNumExpr lz1 = cplex.linearNumExpr();
+			IloLinearNumExpr lz2 = cplex.linearNumExpr();
+			IloLinearNumExpr lz3 = cplex.linearNumExpr();
+			IloNumVar z = cplex.numVar(0, 1, "P1-> "+parentSequence+" -> P2  ->"+childSequence);
+			
+			/*z-A <= 0 upper bound is 1*/
+			lz1.addTerm(1, z);
+			lz1.addTerm(-1, parentSequence);
+			primalConstraints.put(node.getInformationSet(),
+					cplex.addLe(lz1, 0, "TLZ1" + node.getInformationSet()));
+			/*Z-A+x<=1 */
+			lz1.addTerm(1, childSequence);
+			primalConstraints.put(node.getInformationSet(),
+					cplex.addLe(lz1, 1, "TLZ1" + node.getInformationSet()));
+			
+			/*z- x <= 0 */
+			lz2.addTerm(1, z);
+			lz2.addTerm(-1, childSequence);
+			primalConstraints.put(node.getInformationSet(),
+					cplex.addLe(lz2, 0, "TLZ2" + node.getInformationSet()));
+			
+			//System.out.println("lz2: " + lz2);
+			
+			/*A+x-Z <= 1*/
+			lz3.addTerm(-1, z);
+			lz3.addTerm(1, parentSequence);
+			lz3.addTerm(1, childSequence);
+			primalConstraints.put(node.getInformationSet(),
+					cplex.addLe(lz3, 1, "TLZ3" + node.getInformationSet()));
+			
+			
+			//System.out.println("lz1: " + lz3);
+		   
+		   // System.out.println("SeqID = " + seqId);
+		    
+		    zVarsBySequenceId[seqId] = z;
+			objective.addTerm(natureProbability*value, z);
 			//System.out.println("********************************* Equation no 1 **************************************");
 			//System.out.println("Objective :" + objective);
 			return;
@@ -521,8 +562,8 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 			for (Action action : node.getActions()) {
 				// real-valued variable in (0,1)
 
+				//IloNumVar v = cplex.numVar(0, 1, IloNumVarType.Int, "I:" + node.getInformationSet() + "  action:" + action.getName());
 				IloNumVar v = cplex.numVar(0, 1, "I:" + node.getInformationSet() + "  action:" + action.getName());
-
 				strategyVarsByInformationSet[node.getInformationSet()].put(action.getName(), v);
 				int sequenceId = getSequenceIdForPlayerToSolveFor(node.getInformationSet(), action.getName());
 				strategyVarsBySequenceId[sequenceId] = v;
@@ -530,16 +571,48 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 				// add 1*v to the sum over all the sequences at the information set
 				sum.addTerm(1, v);
 				natureConstraints.addTerm(1, v);
-				CreateSequenceFormVariablesAndConstraints(action.getChildId(), v, visited, opponentVisited,
+				CreateSequenceFormVariablesAndConstraints(action.getChildId(),sequenceId, v, childSequence, visited, opponentVisited,
 						natureProbability);
 			}
 
 			
 			primalConstraints.put(node.getInformationSet(),
 					cplex.addEq(sum, parentSequence, "Primal" + node.getInformationSet()));
-			System.out.println("Sum : " + sum + " = " + parentSequence.getUB());
+			//System.out.println("Sum : " + sum + " = " + parentSequence);
 			
-		} else {
+		} else if (node.getPlayer() == playerNotToSolveFor && !opponentVisited.contains(node.getInformationSet())) {
+			opponentVisited.add(node.getInformationSet());
+			IloLinearNumExpr sum = cplex.linearNumExpr();
+			for (Action action : node.getActions()) {
+				// real-valued variable in (0,1) 
+				IloNumVar v = null;
+				if (!opponentStrategyVarsByInformationSet[node.getInformationSet()].containsKey(action.getName())) {
+					v = cplex.numVar(0, 1, IloNumVarType.Bool,
+							"I:" + node.getInformationSet() + "  action:" + action.getName());
+					opponentStrategyVarsByInformationSet[node.getInformationSet()].put(action.getName(), v);
+					int sequenceId = getSequenceIdForPlayerNotToSolveFor(node.getInformationSet(), action.getName());
+					opponentStrategyVarsBySequenceId[sequenceId] = v;
+					// System.out.println(sequenceId + " : " +
+					// opponentStrategyVarsBySequenceId[sequenceId]);
+					realValueBySequenceId[sequenceId] = node.getInformationSet();
+					// add 1*v to the sum over all the sequences at the information set
+					sum.addTerm(1, v);
+					
+				} else {
+				    v = opponentStrategyVarsByInformationSet[node.getInformationSet()].get(action.getName());
+				}
+				CreateSequenceFormVariablesAndConstraints(action.getChildId(), seqId, parentSequence, v, visited,
+						opponentVisited, natureProbability);
+			}
+
+			
+			primalConstraints.put(node.getInformationSet(),
+				cplex.addEq(sum,strategyVarsBySequenceId[0], "P2" + node.getInformationSet()));
+			System.out.println("Sum P2: " + sum + " = " + strategyVarsBySequenceId[0]);
+			
+		} 
+		
+		else {
 			for (Action action : node.getActions()) {
 
 				if (null != action) {
@@ -550,14 +623,21 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 						IloNumVar v = strategyVarsByInformationSet[node.getInformationSet()].get(action.getName());
 						if (null != action) {
 
-							CreateSequenceFormVariablesAndConstraints(action.getChildId(), v, visited, opponentVisited,
+							CreateSequenceFormVariablesAndConstraints(action.getChildId(),seqId, v, childSequence,visited, opponentVisited,
 									newNatureProbability);
 						}
+					} else if (node.getPlayer() == playerNotToSolveFor) {
+						IloNumVar v = opponentStrategyVarsByInformationSet[node.getInformationSet()].get(action.getName());
+						if (null != action) {
+
+							CreateSequenceFormVariablesAndConstraints(action.getChildId(), seqId, parentSequence, v,visited, opponentVisited,
+									newNatureProbability);
+						}
+						
 					} else {
 						if (null != action) {
-							if (node.getPlayer() == playerNotToSolveFor) {
-							}
-							CreateSequenceFormVariablesAndConstraints(action.getChildId(), parentSequence, visited,
+					
+							CreateSequenceFormVariablesAndConstraints(action.getChildId(), seqId, parentSequence, childSequence, visited,
 									opponentVisited, newNatureProbability);
 						}
 					}
@@ -657,7 +737,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 			double leafValue = (valueMultiplier*natureProbability);
 			if (dualPayoffMatrix[dualSequence].containsKey(primalSequence)) {
 				dualPayoffMatrix[dualSequence].put(primalSequence,
-						-(dualPayoffMatrix[dualSequence].get(primalSequence) - leafValue));
+						-(dualPayoffMatrix[dualSequence].get(primalSequence) + leafValue));
 			} else {
 				dualPayoffMatrix[dualSequence].put(primalSequence, leafValue);
 			}
@@ -687,15 +767,15 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 		TIntDoubleIterator it = dualPayoffMatrix[sequenceId].iterator();
 		for (int i = dualPayoffMatrix[sequenceId].size(); i-- > 0;) {
 			it.advance();
-
-			lhs.addTerm(it.value(), strategyVarsBySequenceId[it.key()]);
+			//System.out.println(zVarsBySequenceId[it.key()]);
+			lhs.addTerm(it.value(), zVarsBySequenceId[it.key()]);
 			//temp.addTerm(1, strategyVarsBySequenceId[it.key()]);
 		}
 
 		TIntDoubleIterator it2 = dualPayoffMatrix[sequenceId + 1].iterator();
 		for (int i = dualPayoffMatrix[sequenceId + 1].size(); i-- > 0;) {
 			it2.advance();
-			lhs.addTerm(-it2.value(), strategyVarsBySequenceId[it2.key()]);
+			lhs.addTerm(-it2.value(), zVarsBySequenceId[it2.key()]);
 			//temp.addTerm(1, strategyVarsBySequenceId[it2.key()]);
 
 		}
