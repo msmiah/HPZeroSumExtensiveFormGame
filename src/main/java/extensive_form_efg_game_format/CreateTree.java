@@ -30,7 +30,7 @@ public class CreateTree {
 	private double[] modificationCost = {1.0,1.0, 0.0, 1.0,1.0};
 	private boolean isModifyHoneypot = false;
 	private boolean isModifyRealSystem = false;
-	private boolean isModifyBothSystem =  true;
+	private boolean isModifyBothSystem =  false;
 	
 	
 
@@ -78,16 +78,16 @@ public class CreateTree {
 	public void setProbability() {
 		
         
-		realSystemProbabilities.put("00",0.3);
-		realSystemProbabilities.put("01", 0.2);
-		realSystemProbabilities.put("10", 0.2); 
-		realSystemProbabilities.put("11", 0.3);
+		realSystemProbabilities.put("00", 0.25);
+		realSystemProbabilities.put("01", 0.25);
+		realSystemProbabilities.put("10", 0.25); 
+		realSystemProbabilities.put("11", 0.25);
 		
 
-		honeypotProbabilites.put("00", 0.3);
-		honeypotProbabilites.put("01", 0.3);
+		honeypotProbabilites.put("00", 0.1);
+		honeypotProbabilites.put("01", 0.2);
 		honeypotProbabilites.put("10", 0.3);
-		honeypotProbabilites.put("11", 0.1);
+		honeypotProbabilites.put("11", 0.4);
 		
 		/*
 		realSystemProbabilities.put("000",0.1);
@@ -149,16 +149,16 @@ public class CreateTree {
 	public void setSystemValues() {
 		
 		
-		realSystemValues.put("00", 15);
-		realSystemValues.put("01", 15);
-		realSystemValues.put("10", 15);
-		realSystemValues.put("11", 15);
+		realSystemValues.put("00", 5);
+		realSystemValues.put("01", 6);
+		realSystemValues.put("10", 7);
+		realSystemValues.put("11", 8);
 		
 
-		honeypotValues.put("00", 10);
-		honeypotValues.put("01", 10); 
-		honeypotValues.put("10", 10);
-		honeypotValues.put("11", 10);
+		honeypotValues.put("00", 1);
+		honeypotValues.put("01", 2); 
+		honeypotValues.put("10", 3);
+		honeypotValues.put("11", 4);
 		
 		/*
 		realSystemValues.put("000", 500);
