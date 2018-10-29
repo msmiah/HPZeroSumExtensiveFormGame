@@ -7,8 +7,8 @@ public class Utils {
 	public static final int ATTACKER_INFO_SET_NUMBER = 2;
 	public static final int PLAYER_ONE = DEFENDER_INFO_SET_NUMBER;
 	public static final int PLAYER_TWO = ATTACKER_INFO_SET_NUMBER;
-	public static final int REAL_HOST_FEATURES_NUM = 2;
-	public static final int HONEYPOT_FEATURES_NUM = 2;
+	public static final int REAL_HOST_FEATURES_NUM = 1;
+	public static final int HONEYPOT_FEATURES_NUM = 1;
 	public static final int TOTAL_FEATUES_NUMBER_IN_GAME = REAL_HOST_FEATURES_NUM + HONEYPOT_FEATURES_NUM;
 	public static final String EFG_FILE_SAVING_PATH = "";
 	public static final String FILE_FORMAT=".efg";

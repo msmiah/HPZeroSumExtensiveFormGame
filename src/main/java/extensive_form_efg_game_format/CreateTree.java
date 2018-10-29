@@ -27,10 +27,10 @@ public class CreateTree {
 	private int mChaceInfoSetNo = 1;
 	private int mTotalFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
 	private int mOutcomeCnt;
-	private double[] modificationCost = {1.0,2.0,4.0,3.0};
-	private boolean isModifyHoneypot = false;
+	private ArrayList<Double> modificationCost;
+
 	private boolean isModifyRealSystem = false;
-	private boolean isModifyBothSystem =  false;
+	private boolean isModifyBothSystem =  true;
 	
 	
 
@@ -40,6 +40,7 @@ public class CreateTree {
 		realHostConfigList = new ArrayList<String>();
 		honeypotConfigLIst = new ArrayList<String>();
 		mChanceNodeProbablityList = new ArrayList();
+		modificationCost = new ArrayList();
 		createGambitFile = new CreateGambitEFGFile("hsg_4_features");
 		mBinarytoIntNumbers = new Hashtable<>(); 
 		realSystemValues = new Hashtable<>();
@@ -57,6 +58,7 @@ public class CreateTree {
 			//mChanceNodeProbablityList.add(tmp);
 		}
 		//setP2InformationSet();
+		setModificationCost();
 		setProbability();
 		generateBinaryRepresentation(0, Utils.REAL_HOST_FEATURES_NUM);
 		generateNatureActions();
@@ -75,144 +77,192 @@ public class CreateTree {
 		movePlayerOne();
 	}
 	
+	/* index 0 used for the cost rihtmost bit of network and so on*/
+	public void setModificationCost() {
+		if (Utils.REAL_HOST_FEATURES_NUM == 1) {
+		
+			modificationCost.add(1.0);
+			modificationCost.add(2.0);
+		
+		}else if (Utils.REAL_HOST_FEATURES_NUM == 2) {
+
+			modificationCost.add(1.0);
+			modificationCost.add(2.0);
+			modificationCost.add(3.0);
+			modificationCost.add(4.0);
+		} else if (Utils.REAL_HOST_FEATURES_NUM == 3) {
+
+			modificationCost.add(1.0);
+			modificationCost.add(1.0);
+			modificationCost.add(1.0);
+
+			modificationCost.add(2.0);
+			modificationCost.add(2.0);
+			modificationCost.add(2.0);
+		} else if (Utils.REAL_HOST_FEATURES_NUM == 4) {
+
+			modificationCost.add(1.0);
+			modificationCost.add(1.0);
+			modificationCost.add(1.0);
+			modificationCost.add(1.0);
+
+			modificationCost.add(2.0);
+			modificationCost.add(2.0);
+			modificationCost.add(2.0);
+			modificationCost.add(2.0);
+		}
+	}
+	
 	public void setProbability() {
 		
-        
-		realSystemProbabilities.put("00", 0.25);
-		realSystemProbabilities.put("01", 0.25);
-		realSystemProbabilities.put("10", 0.25); 
-		realSystemProbabilities.put("11", 0.25);
-		
+		if (Utils.REAL_HOST_FEATURES_NUM == 1) {
+			realSystemProbabilities.put("0", 0.5);
+			realSystemProbabilities.put("1", 0.5);
 
-		honeypotProbabilites.put("00", 0.25);
-		honeypotProbabilites.put("01", 0.25);
-		honeypotProbabilites.put("10", 0.25);
-		honeypotProbabilites.put("11", 0.25);
-		
-		/*
-		realSystemProbabilities.put("000",0.1);
-		realSystemProbabilities.put("001", 0.1);
-		realSystemProbabilities.put("010", 0.1); 
-		realSystemProbabilities.put("011", 0.1);
-		realSystemProbabilities.put("100",0.2);
-		realSystemProbabilities.put("101", 0.2);
-		realSystemProbabilities.put("110", 0.1); 
-		realSystemProbabilities.put("111", 0.1);
-		
-		honeypotProbabilites.put("000", 0.1);
-		honeypotProbabilites.put("001", 0.1);
-		honeypotProbabilites.put("010", 0.1);
-		honeypotProbabilites.put("011", 0.1);
-		honeypotProbabilites.put("100", 0.1);
-		honeypotProbabilites.put("101", 0.1);
-		honeypotProbabilites.put("110", 0.2);
-		honeypotProbabilites.put("111", 0.2);
-		*/
-		/*
-		realSystemProbabilities.put("0000",0.1);
-		realSystemProbabilities.put("0001", 0.1);
-		realSystemProbabilities.put("0010", 0.1); 
-		realSystemProbabilities.put("0011", 0.1);
-		realSystemProbabilities.put("0100",0.1);
-		realSystemProbabilities.put("0101", 0.1);
-		realSystemProbabilities.put("0110", 0.1); 
-		realSystemProbabilities.put("0111", 0.1);
-		realSystemProbabilities.put("1000",0.1);
-		realSystemProbabilities.put("1001", 0.1);
-		realSystemProbabilities.put("1010", 0.0); 
-		realSystemProbabilities.put("1011", 0.0);
-		realSystemProbabilities.put("1100",0.0);
-		realSystemProbabilities.put("1101", 0.0);
-		realSystemProbabilities.put("1110", 0.0); 
-		realSystemProbabilities.put("1111", 0.0);
-		
-		honeypotProbabilites.put("0000", 0.0);
-		honeypotProbabilites.put("0001", 0.0);
-		honeypotProbabilites.put("0010", 0.0);
-		honeypotProbabilites.put("0011", 0.0);
-		honeypotProbabilites.put("0100", 0.0);
-		honeypotProbabilites.put("0101", 0.0);
-		honeypotProbabilites.put("0110", 0.0);
-		honeypotProbabilites.put("0111", 0.0);
-		honeypotProbabilites.put("1000", 0.0);
-		honeypotProbabilites.put("1001", 0.0);
-		honeypotProbabilites.put("1010", 1.0);
-		honeypotProbabilites.put("1011", 0.0);
-		honeypotProbabilites.put("1100", 0.0);
-		honeypotProbabilites.put("1101", 0.0);
-		honeypotProbabilites.put("1110", 0.0);
-		honeypotProbabilites.put("1111", 0.0);
-		*/
+			honeypotProbabilites.put("0", 0.5);
+			honeypotProbabilites.put("1", 0.5);
+		} else if (Utils.REAL_HOST_FEATURES_NUM == 2) {
+
+			realSystemProbabilities.put("00", 0.25);
+			realSystemProbabilities.put("01", 0.25);
+			realSystemProbabilities.put("10", 0.25);
+			realSystemProbabilities.put("11", 0.25);
+
+			honeypotProbabilites.put("00", 0.25);
+			honeypotProbabilites.put("01", 0.25);
+			honeypotProbabilites.put("10", 0.25);
+			honeypotProbabilites.put("11", 0.25);
+		} else if (Utils.REAL_HOST_FEATURES_NUM == 3) {
+
+			realSystemProbabilities.put("000", 0.1);
+			realSystemProbabilities.put("001", 0.1);
+			realSystemProbabilities.put("010", 0.1);
+			realSystemProbabilities.put("011", 0.1);
+			realSystemProbabilities.put("100", 0.2);
+			realSystemProbabilities.put("101", 0.2);
+			realSystemProbabilities.put("110", 0.1);
+			realSystemProbabilities.put("111", 0.1);
+
+			honeypotProbabilites.put("000", 0.1);
+			honeypotProbabilites.put("001", 0.1);
+			honeypotProbabilites.put("010", 0.1);
+			honeypotProbabilites.put("011", 0.1);
+			honeypotProbabilites.put("100", 0.1);
+			honeypotProbabilites.put("101", 0.1);
+			honeypotProbabilites.put("110", 0.2);
+			honeypotProbabilites.put("111", 0.2);
+		} else if (Utils.REAL_HOST_FEATURES_NUM == 4) {
+
+			realSystemProbabilities.put("0000", 0.1);
+			realSystemProbabilities.put("0001", 0.1);
+			realSystemProbabilities.put("0010", 0.1);
+			realSystemProbabilities.put("0011", 0.1);
+			realSystemProbabilities.put("0100", 0.1);
+			realSystemProbabilities.put("0101", 0.1);
+			realSystemProbabilities.put("0110", 0.1);
+			realSystemProbabilities.put("0111", 0.1);
+			realSystemProbabilities.put("1000", 0.1);
+			realSystemProbabilities.put("1001", 0.1);
+			realSystemProbabilities.put("1010", 0.0);
+			realSystemProbabilities.put("1011", 0.0);
+			realSystemProbabilities.put("1100", 0.0);
+			realSystemProbabilities.put("1101", 0.0);
+			realSystemProbabilities.put("1110", 0.0);
+			realSystemProbabilities.put("1111", 0.0);
+
+			honeypotProbabilites.put("0000", 0.0);
+			honeypotProbabilites.put("0001", 0.0);
+			honeypotProbabilites.put("0010", 0.0);
+			honeypotProbabilites.put("0011", 0.0);
+			honeypotProbabilites.put("0100", 0.0);
+			honeypotProbabilites.put("0101", 0.0);
+			honeypotProbabilites.put("0110", 0.0);
+			honeypotProbabilites.put("0111", 0.0);
+			honeypotProbabilites.put("1000", 0.0);
+			honeypotProbabilites.put("1001", 0.0);
+			honeypotProbabilites.put("1010", 1.0);
+			honeypotProbabilites.put("1011", 0.0);
+			honeypotProbabilites.put("1100", 0.0);
+			honeypotProbabilites.put("1101", 0.0);
+			honeypotProbabilites.put("1110", 0.0);
+			honeypotProbabilites.put("1111", 0.0);
+		}
 		
 	}
 	
 	public void setSystemValues() {
-		
-		
-		realSystemValues.put("00", 5);
-		realSystemValues.put("01", 5);
-		realSystemValues.put("10", 5);
-		realSystemValues.put("11", 5);
-		
 
-		honeypotValues.put("00", 5);
-		honeypotValues.put("01", 5); 
-		honeypotValues.put("10", 5);
-		honeypotValues.put("11", 5);
-		
-		/*
-		realSystemValues.put("000", 500);
-		realSystemValues.put("001", 500);
-		realSystemValues.put("010", 500);
-		realSystemValues.put("011", 500);
-		realSystemValues.put("100", 500);
-		realSystemValues.put("101", 500);
-		realSystemValues.put("110", 500);
-		realSystemValues.put("111", 500);
-		
-		honeypotValues.put("000", 100);
-		honeypotValues.put("001", 100); 
-		honeypotValues.put("010", 100);
-		honeypotValues.put("011",100);
-		honeypotValues.put("100", 100);
-		honeypotValues.put("101", 100); 
-		honeypotValues.put("110", 100);
-		honeypotValues.put("111",100);*/
-		/*
-		realSystemValues.put("0000", 500);
-		realSystemValues.put("0001", 500);
-		realSystemValues.put("0010", 500);
-		realSystemValues.put("0011", 500);
-		realSystemValues.put("0100", 500);
-		realSystemValues.put("0101", 500);
-		realSystemValues.put("0110", 500);
-		realSystemValues.put("0111", 500);
-		realSystemValues.put("1000", 500);
-		realSystemValues.put("1001", 500);
-		realSystemValues.put("1010", 500);
-		realSystemValues.put("1011", 500);
-		realSystemValues.put("1100", 500);
-		realSystemValues.put("1101", 500);
-		realSystemValues.put("1110", 500);
-		realSystemValues.put("1111", 500);
-		
-		honeypotValues.put("0000", 100);
-		honeypotValues.put("0001", 100); 
-		honeypotValues.put("0010", 100);
-		honeypotValues.put("0011",100);
-		honeypotValues.put("0100", 100);
-		honeypotValues.put("0101", 100); 
-		honeypotValues.put("0110", 100);
-		honeypotValues.put("0111",100);
-		honeypotValues.put("1000", 100);
-		honeypotValues.put("1001", 100); 
-		honeypotValues.put("1010", 100);
-		honeypotValues.put("1011",100);
-		honeypotValues.put("1100", 100);
-		honeypotValues.put("1101", 100); 
-		honeypotValues.put("1110", 100);
-		honeypotValues.put("1111",100);
-		*/
+		if (Utils.REAL_HOST_FEATURES_NUM == 1) {
+			realSystemValues.put("0", 5);
+			realSystemValues.put("1", 5);
+
+			honeypotValues.put("0", 5);
+			honeypotValues.put("1", 5);
+		} else if (Utils.REAL_HOST_FEATURES_NUM == 2) {
+
+			realSystemValues.put("00", 5);
+			realSystemValues.put("01", 5);
+			realSystemValues.put("10", 5);
+			realSystemValues.put("11", 5);
+
+			honeypotValues.put("00", 5);
+			honeypotValues.put("01", 5);
+			honeypotValues.put("10", 5);
+			honeypotValues.put("11", 5);
+		} else if (Utils.REAL_HOST_FEATURES_NUM == 3) {
+			realSystemValues.put("000", 500);
+			realSystemValues.put("001", 500);
+			realSystemValues.put("010", 500);
+			realSystemValues.put("011", 500);
+			realSystemValues.put("100", 500);
+			realSystemValues.put("101", 500);
+			realSystemValues.put("110", 500);
+			realSystemValues.put("111", 500);
+
+			honeypotValues.put("000", 100);
+			honeypotValues.put("001", 100);
+			honeypotValues.put("010", 100);
+			honeypotValues.put("011", 100);
+			honeypotValues.put("100", 100);
+			honeypotValues.put("101", 100);
+			honeypotValues.put("110", 100);
+			honeypotValues.put("111", 100);
+		} else if (Utils.REAL_HOST_FEATURES_NUM == 4) {
+
+			realSystemValues.put("0000", 500);
+			realSystemValues.put("0001", 500);
+			realSystemValues.put("0010", 500);
+			realSystemValues.put("0011", 500);
+			realSystemValues.put("0100", 500);
+			realSystemValues.put("0101", 500);
+			realSystemValues.put("0110", 500);
+			realSystemValues.put("0111", 500);
+			realSystemValues.put("1000", 500);
+			realSystemValues.put("1001", 500);
+			realSystemValues.put("1010", 500);
+			realSystemValues.put("1011", 500);
+			realSystemValues.put("1100", 500);
+			realSystemValues.put("1101", 500);
+			realSystemValues.put("1110", 500);
+			realSystemValues.put("1111", 500);
+
+			honeypotValues.put("0000", 100);
+			honeypotValues.put("0001", 100);
+			honeypotValues.put("0010", 100);
+			honeypotValues.put("0011", 100);
+			honeypotValues.put("0100", 100);
+			honeypotValues.put("0101", 100);
+			honeypotValues.put("0110", 100);
+			honeypotValues.put("0111", 100);
+			honeypotValues.put("1000", 100);
+			honeypotValues.put("1001", 100);
+			honeypotValues.put("1010", 100);
+			honeypotValues.put("1011", 100);
+			honeypotValues.put("1100", 100);
+			honeypotValues.put("1101", 100);
+			honeypotValues.put("1110", 100);
+			honeypotValues.put("1111", 100);
+		}
 	}
 	
 	
@@ -344,7 +394,7 @@ public class CreateTree {
 		if(index == -1)
 			return 0;
 		//System.out.println("index" + index);
-		return modificationCost[index];
+		return modificationCost.get(index);
 		
 	}
 	private boolean isActionsEqual(List actions) {

@@ -446,13 +446,14 @@ public class Game implements GameGenerator {
 	private void insertFeatureProbability(String action, double probability) {
 
 		String realFeature, hpFeature;
-		if (action.substring(0, 1).equals("1")) {
+/*		if (action.substring(0, 1).equals("1")) {
 
 			realFeature = action.substring(1, Utils.REAL_HOST_FEATURES_NUM + 1);
 			hpFeature = action.substring(Utils.REAL_HOST_FEATURES_NUM + 2);
-		} else {
-			hpFeature = action.substring(1, Utils.REAL_HOST_FEATURES_NUM + 1);
-			realFeature = action.substring(Utils.REAL_HOST_FEATURES_NUM + 2);
+		} else*/ {
+			realFeature = action.substring(0, Utils.REAL_HOST_FEATURES_NUM);
+			hpFeature = action.substring(Utils.REAL_HOST_FEATURES_NUM);
+			//System.out.println(realFeature + " : " + hpFeature);
 		}
 		
 		if(systemProbability[0].containsKey(realFeature)){
