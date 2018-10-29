@@ -27,7 +27,7 @@ public class CreateTree {
 	private int mChaceInfoSetNo = 1;
 	private int mTotalFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
 	private int mOutcomeCnt;
-	private double[] modificationCost = {1.0,1.0, 0.0, 1.0,1.0};
+	private double[] modificationCost = {1.0,2.0,4.0,3.0};
 	private boolean isModifyHoneypot = false;
 	private boolean isModifyRealSystem = false;
 	private boolean isModifyBothSystem =  false;
@@ -84,10 +84,10 @@ public class CreateTree {
 		realSystemProbabilities.put("11", 0.25);
 		
 
-		honeypotProbabilites.put("00", 0.1);
-		honeypotProbabilites.put("01", 0.2);
-		honeypotProbabilites.put("10", 0.3);
-		honeypotProbabilites.put("11", 0.4);
+		honeypotProbabilites.put("00", 0.25);
+		honeypotProbabilites.put("01", 0.25);
+		honeypotProbabilites.put("10", 0.25);
+		honeypotProbabilites.put("11", 0.25);
 		
 		/*
 		realSystemProbabilities.put("000",0.1);
@@ -150,15 +150,15 @@ public class CreateTree {
 		
 		
 		realSystemValues.put("00", 5);
-		realSystemValues.put("01", 6);
-		realSystemValues.put("10", 7);
-		realSystemValues.put("11", 8);
+		realSystemValues.put("01", 5);
+		realSystemValues.put("10", 5);
+		realSystemValues.put("11", 5);
 		
 
-		honeypotValues.put("00", 1);
-		honeypotValues.put("01", 2); 
-		honeypotValues.put("10", 3);
-		honeypotValues.put("11", 4);
+		honeypotValues.put("00", 5);
+		honeypotValues.put("01", 5); 
+		honeypotValues.put("10", 5);
+		honeypotValues.put("11", 5);
 		
 		/*
 		realSystemValues.put("000", 500);
@@ -247,7 +247,8 @@ public class CreateTree {
 						//sum += probability;
 					}
 					//probability = realSystemProbabilities.get(realHostConfigList.get(j)) * honeypotProbabilites.get(realHostConfigList.get(k));
-					String actionStr= realFlag +realHostConfigList.get(j)+ i + realHostConfigList.get(k);
+					//String actionStr= realFlag +realHostConfigList.get(j)+ i + realHostConfigList.get(k);
+					String actionStr= realHostConfigList.get(j)+ realHostConfigList.get(k);
 					//System.out.println(actionStr);
 					setP2InformationSet(realHostConfigList.get(j), realHostConfigList.get(k));
 					mChanceNodeProbablityList.add(probability);
@@ -271,20 +272,20 @@ public class CreateTree {
 			int startIndex =0;
 			int numberOfFeatures =0;
 			if(isModifyBothSystem) {
-				numberOfFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME+1;
+				numberOfFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
 				Utils.numOfDefenderActions = Utils.TOTAL_FEATUES_NUMBER_IN_GAME + 1;
 			}else if(isModifyRealSystem) {
-				numberOfFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME + 1;
+				numberOfFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
 				startIndex = Utils.REAL_HOST_FEATURES_NUM;
 			}else {
 				numberOfFeatures =Utils.REAL_HOST_FEATURES_NUM;
 			}
 			
 			for (int j = startIndex; j < numberOfFeatures; j++) {
-				if (j == Utils.REAL_HOST_FEATURES_NUM)
-					continue;
+				//if (j == Utils.REAL_HOST_FEATURES_NUM)
+					//continue;
 				int flipFeature = flipBits(infoNo, j);
-				String strFormat = "%"+ (Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2) +"s";
+				String strFormat = "%"+ (Utils.TOTAL_FEATUES_NUMBER_IN_GAME ) +"s";
 				//System.out.println(strFormat);
 				String flippedStr = String.format(strFormat, Integer.toBinaryString(flipFeature)).replace(' ', '0');
 				//System.out.println(flippedStr);
@@ -306,32 +307,16 @@ public class CreateTree {
 	}
 
 	private void movePlayerTwo(String playerOneAction,int flipPos, int palyerOneInfoSet, String natureAction) {
-		//System.out.println("P1:"+palyerOneInfoSet); 
+
 		ArrayList<String> actions = new ArrayList<>();
-		ArrayList<String> payoffActions = new ArrayList<>();
-		int len = playerOneAction.length();
-		// nature action is give to fix the payoff calculation
-		 
-		String natureReal = natureAction.substring(1, Utils.REAL_HOST_FEATURES_NUM+1);
-		String natureHp= natureAction.substring(Utils.REAL_HOST_FEATURES_NUM+2, Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2);
-		payoffActions.add(natureReal);
-		payoffActions.add(natureHp);
-		
-		String realSysStr = playerOneAction.substring(1, Utils.REAL_HOST_FEATURES_NUM+1);
-		String hpStr = playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM+2, Utils.TOTAL_FEATUES_NUMBER_IN_GAME+2);
-		//setP2InformationSet(realSysStr, hpStr);
+		String realSysStr = playerOneAction.substring(0, Utils.REAL_HOST_FEATURES_NUM);
+		String hpStr = playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM, Utils.TOTAL_FEATUES_NUMBER_IN_GAME);
+		setP2InformationSet(realSysStr, hpStr);
 		actions.add(realSysStr);
 		actions.add(hpStr);
 		String p2InfoSet = getP2InofrmationSet(realSysStr+hpStr); // Making same infoset for both real and HP 
 		//System.out.println(p2InfoSet);
-		
-		//String p2InfoStr = playerOneAction.substring(0,1)+ p2InformationSet.get(realSysStr)+
-			//	playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM+1,Utils.REAL_HOST_FEATURES_NUM+2)+p2InformationSet.get(hpStr);
-		//System.out.println(p2InfoStr);
-		  int infosetNo = mBinarytoIntNumbers.get(p2InfoSet); // playerOne action was used previously. For creating uncertainity for player2 new information set is used.
-		 // infosetNo = infosetNo >> 3;
-		 //int infosetNo = mBinarytoIntNumbers.get(p2InfoStr);
-		//System.out.println(infoStr);
+		int infosetNo = mBinarytoIntNumbers.get(p2InfoSet); // playerOne action was used previously. For creating uncertainity for player2 new information set is used.
 		createGambitFile.createPlayerNode(Utils.PLAYER_NODE_NAME, Utils.PLAYER_TWO, infosetNo, playerOneAction, actions,
 				0);
 		setTerminalNode(actions,flipPos, playerOneAction, palyerOneInfoSet,natureAction);
@@ -376,8 +361,9 @@ public class CreateTree {
 
 		double cost = getUtility(flipPos);
 		//System.out.println("pos" + flipPos + " payoff " + payoff);
-		int isReal = Integer.parseInt(playerOneAction, 2);
-		isReal = isReal >> Utils.TOTAL_FEATUES_NUMBER_IN_GAME+1;
+		//int isReal = Integer.parseInt(playerOneAction, 2);
+		//isReal = isReal >> Utils.TOTAL_FEATUES_NUMBER_IN_GAME+1;
+		int isReal = 1;
 		boolean isEqual = isActionsEqual(actions);
 		ArrayList<Double> payoffs = new ArrayList<>();
 		for (int k = 0; k < actions.size(); k++) {
@@ -412,8 +398,8 @@ public class CreateTree {
 		
 		String realNetworkConfig = realHost+ hp;
 		String imperfectNetwrokConfig  = hp + realHost;
-		String infoSet = 1 + realHost+0+hp;
-		if(!p2InformationSet.contains(realNetworkConfig)) {
+		String infoSet = realHost+hp;
+		if(!p2InformationSet.contains(realNetworkConfig) && !p2InformationSet.contains(imperfectNetwrokConfig)) {
 			//System.out.println(realNetworkConfig);
 			p2InformationSet.put(realNetworkConfig, infoSet);
 		}

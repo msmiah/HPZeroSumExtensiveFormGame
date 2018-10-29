@@ -47,7 +47,6 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 	TIntDoubleMap[] sequenceFormDualProbMatrix;
 	TIntDoubleMap[] sequenceFormDualP1Matrix;
 	TIntDoubleMap[] dualPayoffMatrix; // indexed as [dual sequence][primal sequence]
-	//[] dualPayoffAndProbMatrix; // indexed as [dual sequence][primal sequence]
 	TIntObjectMap<IloNumVar>[] modelStrategyVars;
 	TObjectIntMap<String>[] sequenceIdByInformationSetAndActionChance;
 	TObjectIntMap<String>[] sequenceIdByInformationSetAndActionP1; // indexed as [informationSetId][action.name]
@@ -76,7 +75,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 	int[] sequenceIdForNodeP2; // indexed as [nodeId]. Returns the sequenceId of the last sequence belonging to
 								// Player 2 on the path to the node.
 	int cnt = 0;
-	double[] tempModificationCost = { 0.0, 1.0, 1.0, 2.0, 2.0, };
+	double[] tempModificationCost = { 1.0, 1.0, 2.0, 2.0, };
 
 	public DefenderSequenceFormLPApproximationSolver(Game game, int playerToSolveFor) {
 		this(game, playerToSolveFor, 1e-6);
@@ -511,7 +510,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 			IloLinearNumExpr lz1 = cplex.linearNumExpr();
 			IloLinearNumExpr lz2 = cplex.linearNumExpr();
 			IloLinearNumExpr lz3 = cplex.linearNumExpr();
-			IloNumVar z = cplex.numVar(0, 1, "P1-> "+parentSequence+" -> P2  ->"+childSequence);
+			IloNumVar z = cplex.numVar(0, 1, parentSequence+" -> "+childSequence);
 			/*
 			IloNumVar z ;
 			if (zVarBySequences[dualSequeceId].containsKey(primalSequeceId)) {
@@ -650,6 +649,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 	}
 
 	private void CreateDualVariablesAndConstraints() throws IloException {
+		/*
 		int numVars = 0;
 		int otherPlayerNumVars = 0;
 		if (playerToSolveFor == 1) {
@@ -664,7 +664,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 			names[i] = "Y" + i;
 		}
 		this.dualVars = cplex.numVarArray(numVars, -Double.MAX_VALUE, Utils.PLAYER_ONE_MAX_VAL, names);
-
+*/
 		InitializeDualSequenceMatrix();
 		InitializeDualPayoffMatrix();
 	    System.out.println("***************************************** Equation No 2 ************************************************");
@@ -764,28 +764,19 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 
 	private void CreateDualConstraintForSequence(int sequenceId) throws IloException {
 		IloLinearNumExpr lhs = cplex.linearNumExpr();
-		//IloLinearNumExpr temp = cplex.linearNumExpr();
-		//System.out.println(sequenceId + " = size =" + zVarBySequences[sequenceId].size());
 		TIntDoubleIterator it = dualPayoffMatrix[sequenceId].iterator();
 		TIntObjectIterator<IloNumVar> itt1 = modelStrategyVars[sequenceId].iterator();
 		for (int i = dualPayoffMatrix[sequenceId].size(); i-- > 0;) {
 			it.advance();
 			itt1.advance();
-			//System.out.println(itt1.value() + " value " + it.value());
 			lhs.addTerm(it.value(), itt1.value());
-			//temp.addTerm(1, strategyVarsBySequenceId[it.key()]);
-			//System.out.println(sequenceId + " : " + strategyVarsBySequenceId[it.key()]);
 		}
-		//System.out.println(sequenceId + " : " + lhs);
-		//System.out.println(sequenceId + " = size =" + dualPayoffMatrix[sequenceId+1].size());
 		TIntDoubleIterator it2 = dualPayoffMatrix[sequenceId + 1].iterator();
 		TIntObjectIterator<IloNumVar> itt2 = modelStrategyVars[sequenceId+1].iterator();
 		for (int i = dualPayoffMatrix[sequenceId + 1].size(); i-- > 0;) {
 			it2.advance();
 			itt2.advance();
 			lhs.addTerm(-it2.value(), itt2.value());
-			//System.out.println(itt2.value() + " value " + it2.value());
-			//temp.addTerm(1, strategyVarsBySequenceId[it2.key()]);
 
 		}
 		System.out.println(sequenceId + " : " + lhs);
@@ -951,7 +942,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 						profile[playerToSolveFor][informationSetId][actionId] = 1.0
 								/ game.getNumActionsAtInformationSet(playerToSolveFor, informationSetId);
 					}
-					if (profile[playerToSolveFor][informationSetId][actionId] > 0.00005) {
+					if (profile[playerToSolveFor][informationSetId][actionId] > 0.00005) { 
 						cost += (tempModificationCost[actionId]
 								* profile[playerToSolveFor][informationSetId][actionId]);
 						prob += profile[playerToSolveFor][informationSetId][actionId];
