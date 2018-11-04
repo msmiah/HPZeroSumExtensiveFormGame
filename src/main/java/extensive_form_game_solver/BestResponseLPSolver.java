@@ -88,15 +88,11 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 	@SuppressWarnings("unchecked")
 	private void initializeDataStructures() {
 		int numInformationSets = 0;
-		//int numDualInformationSets = 0;
-		
 		
 		if (playerToSolveFor == 1) {
 			numInformationSets = game.getNumInformationSetsPlayer1();
-			//numDualInformationSets = game.getNumInformationSetsPlayer2();
 		} else {
 			numInformationSets = game.getNumInformationSetsPlayer2();
-			//numDualInformationSets = game.getNumInformationSetsPlayer1();
 		}
 		this.strategyVarsByInformationSet = (HashMap<String, IloNumVar>[]) new HashMap[numInformationSets+1];
 		for (int i = 0; i <= numInformationSets; i++) {
@@ -164,7 +160,10 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 		TObjectDoubleMap<String> map = new TObjectDoubleHashMap<String>();
 		for (IloNumVar v : strategyVarsBySequenceId) {
 			try {
+				if(null != v) {
 				map.put(v.getName(), cplex.getValue(v));
+				//System.out.println(v.getName()+ " : " + cplex.getValue(v));
+				} 
 			} catch (UnknownObjectException e) {
 				e.printStackTrace();
 			} catch (IloException e) {
@@ -425,10 +424,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 		Node node = game.getNodeById(currentNodeId);
 		if (node.isLeaf()) {
 			double value = playerToSolveFor == player1 ? node.getPlayerOneValue() : node.getPlayerTwoValue();
-			//System.out.println("Val :" + value);
 			objective.addTerm(probability * value, parentSequence);
-			//System.out.println("obj :" + objective);
-			//System.out.println(++cnt);
 			return;
 		}
 		
@@ -438,18 +434,20 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 			//sum.addTerm(-1, parentSequence);
 			for (Action action : node.getActions()) {
 				// real-valued variable in (0,1)
-				IloNumVar v = cplex.numVar(0, 1, "I:" + node.getInformationSet() + "action:"+action.getName());
-				strategyVarsByInformationSet[node.getInformationSet()].put(action.getName(), v);
-				int sequenceId = getSequenceIdForPlayerToSolveFor(node.getInformationSet(), action.getName());
-				strategyVarsBySequenceId[sequenceId] = v;
-				// add 1*v to the sum over all the sequences at the information set
-				sum.addTerm(1, v);
+				IloNumVar v = null;
+				if (!strategyVarsByInformationSet[node.getInformationSet()].containsKey(action.getName())) {
+					v = cplex.numVar(0, 1, "I:" + node.getInformationSet() + "action:" + action.getName());
+					strategyVarsByInformationSet[node.getInformationSet()].put(action.getName(), v);
+					int sequenceId = getSequenceIdForPlayerToSolveFor(node.getInformationSet(), action.getName());
+					strategyVarsBySequenceId[sequenceId] = v;
+					// add 1*v to the sum over all the sequences at the information set
+					sum.addTerm(1, v);
+				} else {
+					v = strategyVarsByInformationSet[node.getInformationSet()].get(action.getName());
+				}
 				CreateSequenceFormVariablesAndConstraints(action.getChildId(), v, visited, probability);
 			}
-			// sum_{sequences} = parent_sequence. cplex.addEq returns a reference to the range object describing the constraint. This is useful for dynamically modifying the model in derived classes.
-			//System.out.println("Sum:" + sum + "p:" + parentSequence);
 			primalConstraints.put(node.getInformationSet(), cplex.addEq(sum, parentSequence,"Primal"+node.getInformationSet()));
-			//System.out.println("Game value check : " + cplex.getObjValue());
 		} else {
 			for (int actionId = 0; actionId < node.getActions().length; actionId++) {
 			Action action = node.getActions()[actionId];

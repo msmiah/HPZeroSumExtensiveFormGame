@@ -87,9 +87,9 @@ public class CreateTree {
 		}else if (Utils.REAL_HOST_FEATURES_NUM == 2) {
 
 			modificationCost.add(1.0);
+			modificationCost.add(1.0);
 			modificationCost.add(2.0);
-			modificationCost.add(3.0);
-			modificationCost.add(4.0);
+			modificationCost.add(2.0);
 		} else if (Utils.REAL_HOST_FEATURES_NUM == 3) {
 
 			modificationCost.add(1.0);
@@ -359,9 +359,21 @@ public class CreateTree {
 	private void movePlayerTwo(String playerOneAction,int flipPos, int palyerOneInfoSet, String natureAction) {
 
 		ArrayList<String> actions = new ArrayList<>();
+		ArrayList<String> actionsForfile = new ArrayList<>();
 		String realSysStr = playerOneAction.substring(0, Utils.REAL_HOST_FEATURES_NUM);
 		String hpStr = playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM, Utils.TOTAL_FEATUES_NUMBER_IN_GAME);
 		setP2InformationSet(realSysStr, hpStr);
+/*		if(realSysStr.equals(hpStr))
+		{
+
+			actionsForfile.add(realSysStr+"r");
+			actionsForfile.add(hpStr+"hp");
+		}else {
+
+			actionsForfile.add(realSysStr);
+			actionsForfile.add(hpStr);
+		}
+*/
 		actions.add(realSysStr);
 		actions.add(hpStr);
 		String p2InfoSet = getP2InofrmationSet(realSysStr+hpStr); // Making same infoset for both real and HP 
