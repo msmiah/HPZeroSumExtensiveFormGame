@@ -1,13 +1,13 @@
 ...............Defender's strategy................
 I_root: 	1.0
-I:0  action:00: 	1.0
-I:0  action:01: 	0.0
+I:0  action:00: 	0.0
+I:0  action:01: 	1.0
 I:0  action:10: 	0.0
 I:1  action:01: 	1.0
 I:1  action:00: 	0.0
 I:1  action:11: 	0.0
-I:2  action:10: 	1.0
-I:2  action:11: 	0.0
+I:2  action:10: 	0.1234567901234568
+I:2  action:11: 	0.8765432098765432
 I:2  action:00: 	0.0
 I:3  action:11: 	1.0
 I:3  action:10: 	0.0
@@ -18,14 +18,14 @@ I:1  action:0: 	0.0
 I:1  action:1: 	1.0
 I:3  action:1: 	1.0
 ............... Z variables................
-I:0  action:00 -> I:0  action:0: 	1.0
-I:0  action:01 -> I:1  action:1: 	0.0
+I:0  action:00 -> I:0  action:0: 	0.0
+I:0  action:01 -> I:1  action:1: 	1.0
 I:0  action:10 -> I:1  action:0: 	0.0
 I:1  action:01 -> I:1  action:1: 	1.0
 I:1  action:00 -> I:0  action:0: 	0.0
 I:1  action:11 -> I:3  action:1: 	0.0
 I:2  action:10 -> I:1  action:0: 	0.0
-I:2  action:11 -> I:3  action:1: 	0.0
+I:2  action:11 -> I:3  action:1: 	0.8765432098765432
 I:2  action:00 -> I:0  action:0: 	0.0
 I:3  action:11 -> I:3  action:1: 	1.0
 I:3  action:10 -> I:1  action:0: 	0.0

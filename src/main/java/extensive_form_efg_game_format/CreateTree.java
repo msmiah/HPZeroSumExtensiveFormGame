@@ -116,11 +116,11 @@ public class CreateTree {
 	public void setProbability() {
 		
 		if (Utils.REAL_HOST_FEATURES_NUM == 1) {
-			realSystemProbabilities.put("0", 0.5);
-			realSystemProbabilities.put("1", 0.5);
+			realSystemProbabilities.put("0", 0.1);
+			realSystemProbabilities.put("1", 0.9);
 
-			honeypotProbabilites.put("0", 0.5);
-			honeypotProbabilites.put("1", 0.5);
+			honeypotProbabilites.put("0", 0.9);
+			honeypotProbabilites.put("1", 0.1);
 		} else if (Utils.REAL_HOST_FEATURES_NUM == 2) {
 
 			realSystemProbabilities.put("00", 0.25);
