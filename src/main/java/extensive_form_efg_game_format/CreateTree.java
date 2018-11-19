@@ -82,14 +82,14 @@ public class CreateTree {
 		if (Utils.REAL_HOST_FEATURES_NUM == 1) {
 		
 			modificationCost.add(1.0);
-			modificationCost.add(2.0);
+			modificationCost.add(3.0);
 		
 		}else if (Utils.REAL_HOST_FEATURES_NUM == 2) {
 
 			modificationCost.add(1.0);
 			modificationCost.add(1.0);
 			modificationCost.add(2.0);
-			modificationCost.add(2.0);
+			modificationCost.add(2.0 );
 		} else if (Utils.REAL_HOST_FEATURES_NUM == 3) {
 
 			modificationCost.add(1.0);
@@ -116,22 +116,22 @@ public class CreateTree {
 	public void setProbability() {
 		
 		if (Utils.REAL_HOST_FEATURES_NUM == 1) {
-			realSystemProbabilities.put("0", 0.1);
-			realSystemProbabilities.put("1", 0.9);
+			realSystemProbabilities.put("0", 0.5);
+			realSystemProbabilities.put("1", 0.5);
 
-			honeypotProbabilites.put("0", 0.9);
-			honeypotProbabilites.put("1", 0.1);
+			honeypotProbabilites.put("0", 0.01);
+			honeypotProbabilites.put("1", 0.99);
 		} else if (Utils.REAL_HOST_FEATURES_NUM == 2) {
 
-			realSystemProbabilities.put("00", 0.25);
-			realSystemProbabilities.put("01", 0.25);
-			realSystemProbabilities.put("10", 0.25);
-			realSystemProbabilities.put("11", 0.25);
+			realSystemProbabilities.put("00", 0.7);
+			realSystemProbabilities.put("01", 0.1);
+			realSystemProbabilities.put("10", 0.1);
+			realSystemProbabilities.put("11", 0.1);
 
-			honeypotProbabilites.put("00", 0.25);
-			honeypotProbabilites.put("01", 0.25);
-			honeypotProbabilites.put("10", 0.25);
-			honeypotProbabilites.put("11", 0.25);
+			honeypotProbabilites.put("00", 0.7);
+			honeypotProbabilites.put("01", 0.1);
+			honeypotProbabilites.put("10", 0.1);
+			honeypotProbabilites.put("11", 0.1);
 		} else if (Utils.REAL_HOST_FEATURES_NUM == 3) {
 
 			realSystemProbabilities.put("000", 0.1);
@@ -196,8 +196,8 @@ public class CreateTree {
 			realSystemValues.put("0", 5);
 			realSystemValues.put("1", 5);
 
-			honeypotValues.put("0", 5);
-			honeypotValues.put("1", 5);
+			honeypotValues.put("0", 2);
+			honeypotValues.put("1", 2);
 		} else if (Utils.REAL_HOST_FEATURES_NUM == 2) {
 
 			realSystemValues.put("00", 5);
