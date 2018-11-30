@@ -4,8 +4,15 @@ import extensive_form_game_solver.BestResponseLPSolver;
 import extensive_form_game_solver.CounterFactualRegretSolver;
 import extensive_form_game_solver.DefenderSequenceFormLPApproximationSolver;
 import extensive_form_game_solver.DoubleOracleLPSolver;
+import gnu.trove.iterator.TIntDoubleIterator;
+import gnu.trove.iterator.TIntObjectIterator;
+import gnu.trove.iterator.TObjectByteIterator;
+import gnu.trove.iterator.TObjectDoubleIterator;
 import gnu.trove.map.TObjectDoubleMap;
+import gnu.trove.map.custom_hash.TObjectDoubleCustomHashMap;
+import gnu.trove.set.hash.TIntHashSet;
 import ilog.concert.IloException;
+import ilog.concert.IloNumVar;
 
 /**
  * @author IASRLUser
@@ -21,55 +28,56 @@ public class TestMain {
 
 		Game drpGame = new Game();
 		drpGame.createGameFromFileZerosumPackageFormat("hsg_4_features.efg");
-		
-		 DefenderSequenceFormLPApproximationSolver equilibriumSolver = new DefenderSequenceFormLPApproximationSolver(drpGame, 1);
-		//DoubleOracleLPSolver equilibriumSolver = new DoubleOracleLPSolver(drpGame, 1);
-		//CounterFactualRegretSolver CFRSolver= new CounterFactualRegretSolver(drpGame);
-		//DefenderSequenceFormLPAttackerBr equilibriumSolver = new DefenderSequenceFormLPAttackerBr(drpGame, 2);
-		// AttackerSequenceFormLPSolver equilibriumSolver = new AttackerSequenceFormLPSolver(drpGame, 2);
-	    //SequenceFormLPSolver equilibriumSolver = new SequenceFormLPSolver(drpGame, 2);
-		//CFRSolver.solveGame(10);
-		//double[][] p2Strategy = CFRSolver.getStrategyProfile()[1];
-				
-		
-		
-		equilibriumSolver.solveGame();
-		
-		try {
-			equilibriumSolver.writeStrategyToFile("defenderStrategy.txt");
-		} catch (IloException e) {
-			e.printStackTrace();
-		}
-      
-/*		double[][] p2Strategy = equilibriumSolver.getStrategyProfile()[1];
-		
-		
-		BestResponseLPSolver brSolver = new BestResponseLPSolver(drpGame, 2, p2Strategy);
-		brSolver.solveGame();
-		System.out.println("Game value" + brSolver.getValueOfGame());
-		TObjectDoubleMap<String> p2StrategyMap = brSolver.getStrategyVarMap();
 
-		try {
-			brSolver.writeStrategyToFile("attackerStrategy.txt");
+		DoubleOracleLPSolver equilibriumSolver = new DoubleOracleLPSolver(drpGame, 1);
+		double prevP1Payoff = 0.0;
+		double prevP2Payoff = 0.0;
+		boolean isOnlyDefaultStrategy = true;
+		
+		if(!isOnlyDefaultStrategy) {
+			equilibriumSolver.solveGame();
+			isOnlyDefaultStrategy = false;
 
-		} catch (IloException e) {
-			e.printStackTrace();
+			try {
+				equilibriumSolver.writeStrategyToFile("defenderStrategy.txt");
+			} catch (IloException e) {
+				e.printStackTrace();
+			}
 		}
 		
-	
-		*/
-		/*
-		double[][] tmpStrategy = brSolver.getStrategyProfile()[2];
-		
-		BestResponseLPSolver brSolverdf = new BestResponseLPSolver(drpGame, 1, tmpStrategy);
-		brSolverdf.solveGame();
-		try {
-			brSolverdf.writeStrategyToFile("defenderStrategy2.txt");
 
+		TObjectDoubleMap<String>[] brSequencesMap = new TObjectDoubleMap[3];
+		for (int player = 1; player < 3; player++) {
+
+			double[][] RestricatedEquilibriumStrategy = player ==1 ? equilibriumSolver.getStrategyProfile()[2]: equilibriumSolver.getStrategyProfile()[1];
+			BestResponseLPSolver brSolver = new BestResponseLPSolver(drpGame, player, RestricatedEquilibriumStrategy);
+			brSolver.solveGame();
+			if(player == 1)
+				prevP1Payoff =  brSolver.getValueOfGame();
+			else
+				prevP2Payoff = brSolver.getValueOfGame();
+			//System.out.println("Game value" + brSolver.getValueOfGame());
+			 brSequencesMap[player] = brSolver.getStrategyVarMap();
+		TObjectDoubleIterator<String> it = brSequencesMap[player].iterator();
+			for (int i = brSequencesMap[player].size(); i-- > 0;) {
+			   it.advance();
+			   System.out.println(it.key());
+			}
+			try {
+				brSolver.writeStrategyToFile("Player-"+player+"-bestResponseStrategy.txt");
+
+			} catch (IloException e) {
+				e.printStackTrace();
+			}
+
+		}
+		try {
+			equilibriumSolver.updateRestrictedGame(0, brSequencesMap,new TIntHashSet(), new TIntHashSet());
 		} catch (IloException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}*/
-		
+		}
+
 	}
 
 }

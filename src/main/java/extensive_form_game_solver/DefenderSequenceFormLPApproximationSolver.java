@@ -1003,19 +1003,15 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 	@Override
 	public double[][][] getStrategyProfile() {
 		double[][][] profile = new double[3][][];
-		profile[playerNotToSolveFor] = new double[numPrimalInformationSets][];
-		double prob = 0.0;
-		double cost = 0.0;
-		for (int informationSetId = 0; informationSetId < numPrimalInformationSets - 1; informationSetId++) {
+		System.out.println("Number of sequece " + numSequencesP1);
+		profile[playerToSolveFor] = new double[numSequencesP1+1][];
+		for (int informationSetId = 0; informationSetId < numSequencesP1; informationSetId++) {
+			
 			profile[playerToSolveFor][informationSetId] = new double[game
 					.getNumActionsAtInformationSet(playerToSolveFor, informationSetId)];
-
 			double sum = 0;
 			for (String actionName : strategyVarsByInformationSet[informationSetId].keySet()) {
 				try {
-					// System.out.println("Cplex val : " +
-					// cplex.getValue(strategyVarsByInformationSet[informationSetId].get(actionName)));
-
 					sum += cplex.getValue(strategyVarsByInformationSet[informationSetId].get(actionName));
 
 				} catch (IloException e) {
@@ -1035,15 +1031,15 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 						profile[playerToSolveFor][informationSetId][actionId] = 1.0
 								/ game.getNumActionsAtInformationSet(playerToSolveFor, informationSetId);
 					}
-					/*if (profile[playerToSolveFor][informationSetId][actionId] > 0.00005) { 
-						cost += (tempModificationCost[actionId]
-								* profile[playerToSolveFor][informationSetId][actionId]);
-						prob += profile[playerToSolveFor][informationSetId][actionId];
-					}
-*/
-					System.out.println(strategyVarsByInformationSet[informationSetId].get(actionName)
-					 + " : "
-					 + profile[playerToSolveFor][informationSetId][actionId]);
+					/*
+					 * if (profile[playerToSolveFor][informationSetId][actionId] > 0.00005) { cost
+					 * += (tempModificationCost[actionId]
+					 * profile[playerToSolveFor][informationSetId][actionId]); prob +=
+					 * profile[playerToSolveFor][informationSetId][actionId]; }
+					 */
+					 System.out.println(strategyVarsByInformationSet[informationSetId].get(
+					 actionName) + " : " + profile[playerToSolveFor][informationSetId][actionId]);
+					 
 				} catch (IloException e) {
 					e.printStackTrace();
 				}

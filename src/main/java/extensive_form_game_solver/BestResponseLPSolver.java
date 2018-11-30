@@ -47,6 +47,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 	int numSequencesP2;
 	int numPrimalSequences;
 	int numPrimalInformationSets;
+
 	
 	String[] primalSequenceNames;
 	
@@ -144,7 +145,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 				}*/
 				//System.out.println("Strategy ID :" + strategyVarsBySequenceId.length);
 				//strategyVars = cplex.getValues(strategyVarsBySequenceId);
-				valueOfGame = playerToSolveFor == player1 ? -cplex.getObjValue() : cplex.getObjValue();
+				valueOfGame = playerToSolveFor == player1 ? cplex.getObjValue() : cplex.getObjValue();
 				System.out.println("Attacker's utility : " + valueOfGame);
 			}
 		} catch (IloException e) {
@@ -160,9 +161,10 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 		TObjectDoubleMap<String> map = new TObjectDoubleHashMap<String>();
 		for (IloNumVar v : strategyVarsBySequenceId) {
 			try {
-				if(null != v) {
+				/*Mapping only best response sequences*/
+				if(null != v && cplex.getValue(v) > 0) {
 				map.put(v.getName(), cplex.getValue(v));
-				//System.out.println(v.getName()+ " : " + cplex.getValue(v));
+				
 				} 
 			} catch (UnknownObjectException e) {
 				e.printStackTrace();
@@ -436,7 +438,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 				// real-valued variable in (0,1)
 				IloNumVar v = null;
 				if (!strategyVarsByInformationSet[node.getInformationSet()].containsKey(action.getName())) {
-					v = cplex.numVar(0, 1, "I:" + node.getInformationSet() + "action:" + action.getName());
+					v = cplex.numVar(0, 1, "I:" + node.getInformationSet() + " action:" + action.getName());
 					strategyVarsByInformationSet[node.getInformationSet()].put(action.getName(), v);
 					int sequenceId = getSequenceIdForPlayerToSolveFor(node.getInformationSet(), action.getName());
 					strategyVarsBySequenceId[sequenceId] = v;
@@ -470,6 +472,7 @@ public class BestResponseLPSolver extends ZeroSumGameSolver {
 			//System.out.println(" getProbabilityOfAction " + node.getNodeId() + "action :" + cplex.getObjValue()  );
 			return node.getActions()[actionId].getProbability();
 		} else if (node.getPlayer() == playerNotToSolveFor){
+			//System.out.println("Strategy: " + opponentStrategy[node.getInformationSet()][actionId]);
 			return opponentStrategy[node.getInformationSet()][actionId];
 		} else {
 			System.out.println("BestResponseLPSolver::getProbabilityOfAction error: tried to get probability of playerToSolveFor action");

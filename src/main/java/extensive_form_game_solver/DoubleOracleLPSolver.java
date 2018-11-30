@@ -4,6 +4,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+
+import org.omg.CORBA.SystemException;
 
 import extensive_form_game.Game;
 import extensive_form_game.Game.Action;
@@ -42,11 +45,14 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 							// 1-indexed, but the code corrects for when this is not the case
 	HashMap<String, IloNumVar>[] strategyVarsByInformationSet; // indexed as [inforationSetId][action.name]
 	HashMap<String, IloNumVar>[] opponentStrategyVarsByInformationSet; // indexed as [inforationSetId][action.name]
+	HashMap<String, Integer>[] p2SymmetricActionNumByInformationSet;
 
 	TIntList[] sequenceFormDualMatrix; // indexed as [dual sequence id][information set]
 	TIntDoubleMap[] sequenceFormDualProbMatrix;
 	TIntDoubleMap[] sequenceFormDualP1Matrix;
 	TIntDoubleMap[] dualPayoffMatrix; // indexed as [dual sequence][primal sequence]
+	TIntDoubleMap[] p1PayoffMatrix;
+	TIntDoubleMap[] symmetricActionCntInP2InformationSet;
 	TIntObjectMap<IloNumVar>[] modelStrategyVars;
 	TObjectIntMap<String>[] sequenceIdByInformationSetAndActionChance;
 	TObjectIntMap<String>[] sequenceIdByInformationSetAndActionP1; // indexed as [informationSetId][action.name]
@@ -54,8 +60,13 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 	IloNumVar[] strategyVarsBySequenceId;
 	IloNumVar[] opponentStrategyVarsBySequenceId;
 	IloNumVar[] zVarsBySequenceId;
-
-	int[] realValueBySequenceId;
+	private int[][] restictedInformationSet; 
+	private int[][][] actionRestrictionMapping;
+	@SuppressWarnings("unchecked")
+	private HashMap<String, Integer>[][] restrictedInformationSetIdToActions = new HashMap[3][];
+	
+	
+	int[] p2InformationSetBySequenceId;
 	int numSequencesP1;
 	int numSequencesP2;
 	int numPrimalSequences;
@@ -63,7 +74,6 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 	int numPrimalInformationSets;
 	int numDualInformationSets;
 	int numSequencesNature;
-
 	String[] dualSequenceNames;
 	String[] primalSequenceNames;
 
@@ -121,13 +131,16 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 		this.strategyVarsByInformationSet = (HashMap<String, IloNumVar>[]) new HashMap[numInformationSets + 1];
 		this.opponentStrategyVarsByInformationSet = (HashMap<String, IloNumVar>[]) new HashMap[opponentNumInformationSets
 				+ 1];
+		this.p2SymmetricActionNumByInformationSet = (HashMap<String, Integer>[]) new HashMap[opponentNumInformationSets
+		                                                                       				+ 1];
+		
 		for (int i = 0; i <= numInformationSets; i++) {
 			this.strategyVarsByInformationSet[i] = new HashMap<String, IloNumVar>();
 		}
 
 		for (int i = 0; i <= opponentNumInformationSets; i++) {
 			this.opponentStrategyVarsByInformationSet[i] = new HashMap<String, IloNumVar>();
-
+			this.p2SymmetricActionNumByInformationSet[i] = new HashMap<String, Integer>();
 		}
 		numPrimalSequences = playerToSolveFor == 1 ? game.getNumSequencesP1() : game.getNumSequencesP2();
 		numDualSequences = playerNotToSolveFor == 1 ? game.getNumSequencesP1() : game.getNumSequencesP2();
@@ -150,10 +163,14 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 		primalSequenceNames = new String[numDualSequences];
 
 		dualPayoffMatrix = new TIntDoubleHashMap[numDualSequences];
+		symmetricActionCntInP2InformationSet = new TIntDoubleHashMap[numDualSequences];
 		modelStrategyVars = new TIntObjectHashMap[numDualSequences];
+		p1PayoffMatrix = new TIntDoubleHashMap[numDualSequences];
 
 		for (int i = 0; i < numDualSequences; i++) {
 			dualPayoffMatrix[i] = new TIntDoubleHashMap();
+			symmetricActionCntInP2InformationSet[i] = new TIntDoubleHashMap();
+			p1PayoffMatrix[i] = new TIntDoubleHashMap();
 			modelStrategyVars[i] = new TIntObjectHashMap<>();
 		}
 		// ensure that we have a large enough array for both the case where information
@@ -175,10 +192,10 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 			strategyVarsBySequenceId = new IloNumVar[game.getNumSequencesP1()];
 			opponentStrategyVarsBySequenceId = new IloNumVar[game.getNumSequencesP2()];
 			zVarsBySequenceId = new IloNumVar[game.getNumSequencesP1()];
-			realValueBySequenceId = new int[game.getNumSequencesP1()];
+			p2InformationSetBySequenceId = new int[game.getNumSequencesP1()];
 		} else {
 			strategyVarsBySequenceId = new IloNumVar[game.getNumSequencesP2()];
-			realValueBySequenceId = new int[game.getNumSequencesP2()];
+			p2InformationSetBySequenceId = new int[game.getNumSequencesP2()];
 		}
 
 		primalConstraints = new TIntObjectHashMap<IloConstraint>();
@@ -186,6 +203,29 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 		nodeNatureProbabilities = new double[game.getNumNodes() + 1]; // Use +1 to be robust for non-zero indexed nodes
 		sequenceIdForNodeP1 = new int[game.getNumNodes() + 1];
 		sequenceIdForNodeP2 = new int[game.getNumNodes() + 1];
+		
+		restictedInformationSet = new int[3][];
+		restictedInformationSet[1] = new int[numPrimalSequences];
+		restictedInformationSet[2]= new int[numDualSequences];
+		
+
+		restrictedInformationSetIdToActions[1] = (HashMap<String, Integer>[]) new HashMap[numInformationSets + 1];
+		restrictedInformationSetIdToActions[2] = (HashMap<String, Integer>[]) new HashMap[opponentNumInformationSets + 1];
+		
+		for (int i = 0; i <= numInformationSets; i++) {
+			this.restrictedInformationSetIdToActions[1][i] = new HashMap<String, Integer>();
+		}
+		
+		for (int i = 0; i <= opponentNumInformationSets; i++) {
+			this.restrictedInformationSetIdToActions[2][i] = new HashMap<String, Integer>();
+		}
+
+		/*
+		actionRestrictionMapping = new int[3][][];
+		actionRestrictionMapping[1] = new int[numPrimalSequences][];
+		actionRestrictionMapping[2] = new int[numDualSequences][];*/
+		
+		
 
 	}
 
@@ -436,7 +476,6 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 	 */
 	private void setUpModel(double tol) throws IloException {
 		setCplexParameters(tol);
-
 		objective = cplex.linearNumExpr();
 		natureConstraints = cplex.linearNumExpr();
 		// The empty sequence is the 0'th sequence for each player
@@ -486,16 +525,22 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 				sequenceIdByInformationSetAndActionChance[node.getInformationSet()].put(action.getName(),
 						numSequencesNature++);
 			} else if (node.getPlayer() == 1 && !visitedP1.contains(node.getInformationSet())) {
-				sequenceIdByInformationSetAndActionP1[node.getInformationSet()].put(action.getName(), numSequencesP1++);
+				//if(!sequenceIdByInformationSetAndActionP2[node.getInformationSet()].containsKey(action.getName()))
+					sequenceIdByInformationSetAndActionP1[node.getInformationSet()].put(action.getName(), numSequencesP1++);
 				if (playerToSolveFor == 1)
 					primalSequenceNames[numSequencesP1 - 1] = Integer.toString(node.getInformationSet()) + ";"
 							+ action.getName();
 				else
 					dualSequenceNames[numSequencesP1 - 1] = Integer.toString(node.getInformationSet()) + ";"
 							+ action.getName();
-				//System.out.println(primalSequenceNames[numSequencesP1 - 1]);
 			} else if (node.getPlayer() == 2 && !visitedP2.contains(node.getInformationSet())) {
-				sequenceIdByInformationSetAndActionP2[node.getInformationSet()].put(action.getName(), numSequencesP2++);
+				if (!sequenceIdByInformationSetAndActionP2[node.getInformationSet()].containsKey(action.getName()))
+					p2SymmetricActionNumByInformationSet[node.getInformationSet()].put(action.getName(), 1);
+				else
+					p2SymmetricActionNumByInformationSet[node.getInformationSet()].put(action.getName(),
+							p2SymmetricActionNumByInformationSet[node.getInformationSet()].get(action.getName()) + 1);
+				
+					sequenceIdByInformationSetAndActionP2[node.getInformationSet()].put(action.getName(), numSequencesP2++);
 				if (playerToSolveFor == 2)
 					primalSequenceNames[numSequencesP2 - 1] = Integer.toString(node.getInformationSet()) + ";"
 							+ action.getName();
@@ -533,7 +578,7 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 		if (node.isLeaf()) { // Objective function
 			double value = playerToSolveFor == player1 ? node.getPlayerOneValue() : node.getPlayerTwoValue();
 			
-			//System.out.println(childSequence + " : " + value + " :::: " + natureProbability);
+			//System.out.println(childSequence + " : " + value);
 			/* Linearizing constraints*/
 
 			IloLinearNumExpr lz1 = cplex.linearNumExpr();
@@ -544,59 +589,67 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 			IloNumVar z ;
 			if (modelStrategyVars[dualSequeceId].containsKey(primalSequeceId)) {
 				z = modelStrategyVars[dualSequeceId].get(primalSequeceId);
-				System.out.println("Z:" +z );
+				p1PayoffMatrix[dualSequeceId].put(primalSequeceId, (p1PayoffMatrix[dualSequeceId].get(primalSequeceId)+(value*natureProbability)));
+				//System.out.println("Z:" +z );
 			} else {
-				z = cplex.numVar(0, 1, parentSequence+" -> "+childSequence);
+				z = cplex.numVar(0, 1, parentSequence +" -> "+ childSequence);
+			    
+			    /*z-A <= 0 upper bound is 1*/
+				lz1.addTerm(1, z);
+				lz1.addTerm(-1, parentSequence);
+				primalConstraints.put(node.getInformationSet(),
+						cplex.addLe(lz1, 0, "TLZ1" + dualSequeceId));
+				
+				/*Z-A+x<=1 */
+				/*
+				lz1.addTerm(1, childSequence);
+				primalConstraints.put(node.getInformationSet(),
+						cplex.addLe(lz1, 1, "TLZ1" + node.getInformationSet()));
+				*/
+				/*z- x <= 0 */
+				lz2.addTerm(1, z);
+				lz2.addTerm(-1, childSequence);
+				primalConstraints.put(node.getInformationSet(),
+						cplex.addLe(lz2, 0, "TLZ2" + dualSequeceId));
+				
+				//System.out.println("lz2: " + lz2);
+				
+				/*A+x-Z <= 1*/
+				lz3.addTerm(-1, z);
+				lz3.addTerm(1, parentSequence);
+				lz3.addTerm(1, childSequence);
+				//System.out.println(lz3);
+				primalConstraints.put(node.getInformationSet(),
+						cplex.addLe(lz3, 1, "TLZ3" + dualSequeceId));
 
 			    modelStrategyVars[dualSequeceId].put(primalSequeceId,z);
+			    p1PayoffMatrix[dualSequeceId].put(primalSequeceId,value*natureProbability);
 			    zVarsBySequenceId[primalSequeceId] = z;
 			}
 			
-			/*z-A <= 0 upper bound is 1*/
-			lz1.addTerm(1, z);
-			lz1.addTerm(-1, parentSequence);
-			primalConstraints.put(node.getInformationSet(),
-					cplex.addLe(lz1, 0, "TLZ1" + node.getInformationSet()));
-			/*Z-A+x<=1 */
-			lz1.addTerm(1, childSequence);
-			primalConstraints.put(node.getInformationSet(),
-					cplex.addLe(lz1, 1, "TLZ1" + node.getInformationSet()));
 			
-			/*z- x <= 0 */
-			lz2.addTerm(1, z);
-			lz2.addTerm(-1, childSequence);
-			primalConstraints.put(node.getInformationSet(),
-					cplex.addLe(lz2, 0, "TLZ2" + node.getInformationSet()));
-			
-			//System.out.println("lz2: " + lz2);
-			
-			/*A+x-Z <= 1*/
-			lz3.addTerm(-1, z);
-			lz3.addTerm(1, parentSequence);
-			lz3.addTerm(1, childSequence);
-			primalConstraints.put(node.getInformationSet(),
-					cplex.addLe(lz3, 1, "TLZ3" + node.getInformationSet()));
-		    //if(infoset == 32)
-		    	objective.addTerm(value*natureProbability, z);
+		   // System.out.println(parentSequence + "->" + childSequence + " : " +value);
+		    //objective.addTerm(value*natureProbability, z);
 			//System.out.println("********************************* Equation no 1 **************************************");
 			//System.out.println("Objective :" + objective);
 			return;
 		}
 
 		if (node.getPlayer() == playerToSolveFor && !visited.contains(node.getInformationSet())) {
-			//if (node.getInformationSet() == 1)
-				//return;
 			visited.add(node.getInformationSet());
 			IloLinearNumExpr sum = cplex.linearNumExpr();
 			for (Action action : node.getActions()) {
+				
+				if(!restrictedInformationSetIdToActions[node.getPlayer()][node.getInformationSet()].containsKey(action.getName()))
+					continue;
 				// real-valued variable in (0,1)
-
+				
 				//IloNumVar v = cplex.numVar(0, 1, IloNumVarType.Int, "I:" + node.getInformationSet() + "  action:" + action.getName());
 				IloNumVar v = cplex.numVar(0, 1, "I:" + node.getInformationSet() + "  action:" + action.getName());
 				strategyVarsByInformationSet[node.getInformationSet()].put(action.getName(), v);
 				int sequenceId = getSequenceIdForPlayerToSolveFor(node.getInformationSet(), action.getName());
 				strategyVarsBySequenceId[sequenceId] = v;
-				realValueBySequenceId[sequenceId] = node.getInformationSet();
+				p2InformationSetBySequenceId[sequenceId] = node.getInformationSet();
 				// add 1*v to the sum over all the sequences at the information set
 				sum.addTerm(1, v);
 				natureConstraints.addTerm(1, v);
@@ -614,29 +667,34 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 			IloLinearNumExpr sum = cplex.linearNumExpr();
 			for (Action action : node.getActions()) {
 				// real-valued variable in (0,1) 
+				if(!restrictedInformationSetIdToActions[node.getPlayer()][node.getInformationSet()].containsKey(action.getName()))
+					continue;
 				IloNumVar v = null;
 				int sequenceId = getSequenceIdForPlayerNotToSolveFor(node.getInformationSet(), action.getName());
+				//System.out.println( action + " Sequecne id : " + sequenceId);
 
 				if (!opponentStrategyVarsByInformationSet[node.getInformationSet()].containsKey(action.getName())) {
 					v = cplex.numVar(0, 1, IloNumVarType.Bool,
 							"I:" + node.getInformationSet() + "  action:" + action.getName());
 					opponentStrategyVarsByInformationSet[node.getInformationSet()].put(action.getName(), v);
-										opponentStrategyVarsBySequenceId[sequenceId] = v;
-					realValueBySequenceId[sequenceId] = node.getInformationSet();
+					//p2SymmetricActionNumByInformationSet[node.getInformationSet()].put(action.getName(), 1);
+					opponentStrategyVarsBySequenceId[sequenceId] = v;
+					p2InformationSetBySequenceId[sequenceId] = node.getInformationSet();
 					// add 1*v to the sum over all the sequences at the information set
 					sum.addTerm(1, v);
 					
 				} else {
 				    v = opponentStrategyVarsByInformationSet[node.getInformationSet()].get(action.getName());
+				  //  p2SymmetricActionNumByInformationSet[node.getInformationSet()].put(action.getName(), 
+				  //  		p2SymmetricActionNumByInformationSet[node.getInformationSet()].get(action.getName())+1);
 				}
 				CreateSequenceFormVariablesAndConstraints(action.getChildId(),primalSequeceId, sequenceId, parentSequence, v, visited,
 						opponentVisited, natureProbability,node.getInformationSet());
 			}
 
-			
 			primalConstraints.put(node.getInformationSet(),
 				cplex.addEq(sum,1, "P2" + node.getInformationSet()));
-			System.out.println("Sum P2: " + sum + " = " + 1);
+			//System.out.println("Sum P2: " + sum + " = " + 1);
 			
 		} 
 		
@@ -700,7 +758,9 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 		InitializeDualSequenceMatrix();
 		InitializeDualPayoffMatrix();
 	    System.out.println("***************************************** Equation No 2 ************************************************");
-		for (int sequenceId = 1; sequenceId < numPrimalSequences; sequenceId += 2) {
+		
+	    System.out.println("numSequencesP2 : " + numSequencesP2);
+	    for (int sequenceId = 1; sequenceId < numSequencesP2; sequenceId += Utils.MAX_NO_ATTACKER_ACTIONS) {
 
 			CreateDualConstraintForSequence(sequenceId);
 		}
@@ -762,13 +822,8 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 
 	private void InitializeDualPayoffMatrixRecursive(int currentNodeId, int primalSequence, int dualSequence,
 			double natureProbability) throws IloException {
-		Node node = this.game.getNodeById(currentNodeId);
 		
-		/*if(node.getPlayer() == 1) {
-		 if(node.getInformationSet() == 1)
-			 return;
-		}
-		*/
+		Node node = this.game.getNodeById(currentNodeId);
 		if (null == node)
 			return;
 		if (node.isLeaf()) {
@@ -777,14 +832,22 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 			if (dualPayoffMatrix[dualSequence].containsKey(primalSequence)) {
 				dualPayoffMatrix[dualSequence].put(primalSequence,
 						(dualPayoffMatrix[dualSequence].get(primalSequence) + leafValue));
+				symmetricActionCntInP2InformationSet[dualSequence].put(primalSequence,
+						(symmetricActionCntInP2InformationSet[dualSequence].get(primalSequence) + 1));
 			} else {
 				dualPayoffMatrix[dualSequence].put(primalSequence, leafValue);
+				symmetricActionCntInP2InformationSet[dualSequence].put(primalSequence, 1);
+				
 			}
 			sequenceFormDualProbMatrix[dualSequence].put(primalSequence, natureProbability);
 
 		} else {
 			for (Action action : node.getActions()) {
 				if (action != null) {
+					if(node.getPlayer() !=0  && 
+						!restrictedInformationSetIdToActions[node.getPlayer()][node.getInformationSet()].containsKey(action.getName()))
+						continue;
+					
 					int newPrimalSequence = node.getPlayer() == playerToSolveFor
 							? getSequenceIdForPlayerToSolveFor(node.getInformationSet(), action.getName())
 							: primalSequence;
@@ -793,6 +856,7 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 							: dualSequence;
 					double newNatureProbability = node.getPlayer() == 0 ? natureProbability * action.getProbability()
 							: natureProbability;
+					//System.out.println("Primal Seq " + newDualSequence );
 					InitializeDualPayoffMatrixRecursive(action.getChildId(), newPrimalSequence, newDualSequence,
 							newNatureProbability);
 				}
@@ -801,25 +865,53 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 	}
 
 	private void CreateDualConstraintForSequence(int sequenceId) throws IloException {
-		IloLinearNumExpr lhs = cplex.linearNumExpr();
-		TIntDoubleIterator it = dualPayoffMatrix[sequenceId].iterator();
-		TIntObjectIterator<IloNumVar> itt1 = modelStrategyVars[sequenceId].iterator();
-		for (int i = dualPayoffMatrix[sequenceId].size(); i-- > 0;) {
-			it.advance();
-			itt1.advance();
-			lhs.addTerm(it.value(), itt1.value());
-		}
-		TIntDoubleIterator it2 = dualPayoffMatrix[sequenceId + 1].iterator();
-		TIntObjectIterator<IloNumVar> itt2 = modelStrategyVars[sequenceId+1].iterator();
-		for (int i = dualPayoffMatrix[sequenceId + 1].size(); i-- > 0;) {
-			it2.advance();
-			itt2.advance();
-			lhs.addTerm(-it2.value(), itt2.value());
-
-		}
-		System.out.println(sequenceId + " : " + lhs);
-		dualConstraints.put(sequenceId, cplex.addGe(lhs, 0, "Dual" + sequenceId));
 		
+
+      //int p2InformationSet = p2InformationSetBySequenceId[sequenceId];
+      //int numOfActionsInInformationSet = opponentStrategyVarsByInformationSet[p2InformationSet].size();
+
+        /* lhs is linear expression of expected payoff in each information set*/
+		IloLinearNumExpr lhs = cplex.linearNumExpr();
+		for (int actionNo = 0; actionNo < Utils.MAX_NO_ATTACKER_ACTIONS; actionNo++) {
+			int tmpIndex = sequenceId + actionNo;
+			TIntDoubleIterator it = dualPayoffMatrix[tmpIndex].iterator();
+			TIntObjectIterator<IloNumVar> itt1 = modelStrategyVars[tmpIndex].iterator();
+			TIntDoubleIterator itt2 = symmetricActionCntInP2InformationSet[tmpIndex].iterator();
+			for (int i = dualPayoffMatrix[tmpIndex].size(); i-- > 0;) {
+				it.advance();
+				itt1.advance();
+				itt2.advance();
+				double  totValue = it.value()/itt2.value();
+				//System.out.println(itt2.value());
+				lhs.addTerm(totValue, itt1.value());
+			}
+		}
+		
+		for (int actionNo = 0; actionNo < Utils.MAX_NO_ATTACKER_ACTIONS; actionNo++) {
+			int tmpIndex = sequenceId + actionNo;
+			IloLinearNumExpr rhs  = null;
+			if (dualPayoffMatrix[tmpIndex].size() > 0) {
+				rhs = cplex.linearNumExpr();
+				TIntDoubleIterator it = dualPayoffMatrix[tmpIndex].iterator();
+				TIntObjectIterator<IloNumVar> itt1 = modelStrategyVars[tmpIndex].iterator();
+				TIntDoubleIterator itt2 = symmetricActionCntInP2InformationSet[tmpIndex].iterator();
+				for (int i = dualPayoffMatrix[tmpIndex].size(); i-- > 0;) {
+					it.advance();
+					itt1.advance();
+					itt2.advance();
+					double  totValue = it.value()/itt2.value();
+					 //rhs.addTerm(totValue, opponentStrategyVarsBySequenceId[tmpIndex]);					
+					//rhs.addTerm(totValue, itt1.value());
+					rhs.addTerm(totValue, strategyVarsBySequenceId[it.key()]);
+				}
+				//System.out.println(rhs);
+				if(rhs != null)	
+					cplex.addGe(lhs,rhs, "Dual" + tmpIndex);
+			}
+		}
+		//System.out.println(lhs);
+		
+	
 	}
 
 	/**
@@ -876,11 +968,77 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 	}
 
 	private void SetObjective() throws IloException {
+		for (int sequenceId = 1; sequenceId < numSequencesP2; sequenceId++) {
+
+			TIntDoubleIterator it = p1PayoffMatrix[sequenceId].iterator();
+			TIntObjectIterator<IloNumVar> itt1 = modelStrategyVars[sequenceId].iterator();
+			TIntDoubleIterator itt2 = symmetricActionCntInP2InformationSet[sequenceId].iterator();
+			for (int i = p1PayoffMatrix[sequenceId].size(); i-- > 0;) {
+				it.advance();
+				itt1.advance();
+				itt2.advance();
+				double totValue = it.value() / itt2.value();
+				objective.addTerm(totValue, itt1.value());
+			}
+
+			
+		}
 		cplex.addMaximize(objective);
 		System.out.println("************************************************ Equation no 1 ***************************");
 		System.out.println("Objective Function : " + objective);
 	}
 
+	
+	public void updateRestrictedGame(int currentNodeId, TObjectDoubleMap<String>[] brSequences,TIntSet visited,
+			TIntSet opponentVisited) throws IloException {
+
+		Node node = game.getNodeById(currentNodeId);
+		if (node.isLeaf()) {
+			return;
+		}
+		
+		if (node.getPlayer() == playerToSolveFor &&  !visited.contains(node.getInformationSet())) {
+			visited.add(node.getInformationSet());
+			for (Action action : node.getActions()) {
+				String v = "I:" + node.getInformationSet() + " action:" + action.getName();
+				if(brSequences[node.getPlayer()].containsKey(v)
+						&& !restrictedInformationSetIdToActions[node.getPlayer()][node.getInformationSet()].containsKey(action.getName())) {
+					
+					restictedInformationSet[node.getPlayer()][node.getInformationSet()] = node.getInformationSet();
+					restrictedInformationSetIdToActions[node.getPlayer()][node.getInformationSet()].put(action.getName(), node.getInformationSet());
+					//System.out.println(node.getInformationSet()+ " : " + action.getName());
+				}else if(!restrictedInformationSetIdToActions[node.getPlayer()][node.getInformationSet()].containsKey(action.getName())) {
+						continue;
+				} 
+					updateRestrictedGame(action.getChildId(),brSequences, visited, opponentVisited);
+			}
+		} else if (node.getPlayer() == playerNotToSolveFor &&  !opponentVisited.contains(node.getInformationSet())) {
+			opponentVisited.add(node.getInformationSet());
+			for (Action action : node.getActions()) {
+				String v = "I:" + node.getInformationSet() + " action:" + action.getName();
+				
+					if(brSequences[node.getPlayer()].containsKey(v) && !restrictedInformationSetIdToActions[node.getPlayer()][node.getInformationSet()].containsKey(action.getName())) {
+						//System.out.println(node.getInformationSet()+ " : " + action.getName());
+						restictedInformationSet[node.getPlayer()][node.getInformationSet()] = node.getInformationSet();
+						restrictedInformationSetIdToActions[node.getPlayer()][node.getInformationSet()].put(action.getName(), node.getInformationSet());
+					}else if(!restrictedInformationSetIdToActions[node.getPlayer()][node.getInformationSet()].containsKey(action.getName())) {
+							continue;
+					}
+					//System.out.println(node.getInformationSet()+ " : " + action.getName());
+					updateRestrictedGame(action.getChildId(),brSequences, visited, opponentVisited);
+			}
+		} 
+		
+		else {
+			for (int actionId = 0; actionId < node.getActions().length; actionId++) {
+				Action action = node.getActions()[actionId];
+				updateRestrictedGame(action.getChildId(), brSequences, visited, opponentVisited);
+				
+			}
+		}
+	
+		
+	}
 	public int getPlayerToSolveFor() {
 		return playerToSolveFor;
 	}
@@ -899,6 +1057,10 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 
 	public HashMap<String, IloNumVar>[] getStrategyVarsByInformationSet() {
 		return strategyVarsByInformationSet;
+	}
+	
+	public HashMap<String, IloNumVar>[] getOpponetStrategyVarsByInformationSet() {
+		return opponentStrategyVarsByInformationSet;
 	}
 
 	public TIntList[] getSequenceFormDualMatrix() {
@@ -948,42 +1110,70 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 	@Override
 	public double[][][] getStrategyProfile() {
 		double[][][] profile = new double[3][][];
-		profile[playerToSolveFor] = new double[numPrimalInformationSets][];
-		for (int informationSetId = 0; informationSetId < numPrimalInformationSets - 1; informationSetId++) {
-			profile[playerToSolveFor][informationSetId] = new double[game
-					.getNumActionsAtInformationSet(playerToSolveFor, informationSetId)];
+		int numSequences = 0;
+		for (int player = 1; player < 3; player++) {
+			numSequences= player ==1 ? numSequencesP1 : numSequencesP2;
+			HashMap<String, IloNumVar>[] strategyVarsByInfoset = player == 1 ? getStrategyVarsByInformationSet() : getOpponetStrategyVarsByInformationSet();
+			profile[player] = new double[numSequences + 1][];
+			for (int informationSetId = 0; informationSetId < numSequences; informationSetId++) {
+				boolean isDeafualtAction = true;
+				String defaultActionName = null;
+				profile[player][informationSetId] = new double[game
+						.getNumActionsAtInformationSet(player, informationSetId)];
+				double sum = 0;
+				for (String actionName : strategyVarsByInfoset[informationSetId].keySet()) {
+					if(!restrictedInformationSetIdToActions[player][informationSetId].containsKey(actionName))
+						continue;
+					try {
+						sum += cplex.getValue(strategyVarsByInfoset[informationSetId].get(actionName));
 
-			double sum = 0;
-			for (String actionName : strategyVarsByInformationSet[informationSetId].keySet()) {
-				try {
-					// System.out.println("Cplex val : " +
-					// cplex.getValue(strategyVarsByInformationSet[informationSetId].get(actionName)));
-
-					sum += cplex.getValue(strategyVarsByInformationSet[informationSetId].get(actionName));
-
-				} catch (IloException e) {
-					e.printStackTrace();
-				}
-			}
-
-			for (int actionId = 0; actionId < game.getNumActionsAtInformationSet(playerToSolveFor,
-					informationSetId); actionId++) {
-				String actionName = game.getActionsAtInformationSet(playerToSolveFor, informationSetId)[actionId]
-						.getName();
-				try {
-					if (sum > 0) {
-						profile[playerToSolveFor][informationSetId][actionId] = cplex
-								.getValue(strategyVarsByInformationSet[informationSetId].get(actionName));
-					} else {
-						profile[playerToSolveFor][informationSetId][actionId] = 1.0
-								/ game.getNumActionsAtInformationSet(playerToSolveFor, informationSetId);
+					} catch (IloException e) {
+						e.printStackTrace();
 					}
+				}
 
-					System.out.println(strategyVarsByInformationSet[informationSetId].get(actionName)
-					 + " : "
-					 + profile[playerToSolveFor][informationSetId][actionId]);
-				} catch (IloException e) {
-					e.printStackTrace();
+				for (int actionId = 0; actionId < game.getNumActionsAtInformationSet(player,
+						informationSetId); actionId++) {
+					String actionName = game.getActionsAtInformationSet(player, informationSetId)[actionId]
+							.getName();
+					try {
+						if (sum > 0) {
+							if (player == 2) {
+
+								profile[player][informationSetId][actionId] = cplex
+										.getValue(strategyVarsByInfoset[informationSetId].get(actionName))/
+										p2SymmetricActionNumByInformationSet[informationSetId].get(actionName);
+							} else {
+
+								profile[player][informationSetId][actionId] = cplex
+										.getValue(strategyVarsByInfoset[informationSetId].get(actionName));
+							}
+						} else {
+							if(player == 2 && isDeafualtAction) {
+							    profile[player][informationSetId][actionId] = 1.0/p2SymmetricActionNumByInformationSet[informationSetId].get(actionName);
+							    isDeafualtAction = false;
+							    defaultActionName = actionName;
+							}
+						    else if(player == 1 && isDeafualtAction) {
+								profile[player][informationSetId][actionId] = 1.0;
+								isDeafualtAction = false;
+								defaultActionName = actionName;
+						    }
+							else {
+								if(actionName.equals(defaultActionName) && player == 2)
+									profile[player][informationSetId][actionId] = 1.0/p2SymmetricActionNumByInformationSet[informationSetId].get(actionName);
+								else
+									profile[player][informationSetId][actionId] = 0.0;
+							}
+						}
+						/*
+						System.out.println("I:"+informationSetId+" action:"+
+								 actionName + " : " + profile[player][informationSetId][actionId]);*/
+
+						//System.out.println(player + " Sum :" + sum);
+					} catch (IloException e) {
+						e.printStackTrace();
+					}
 				}
 			}
 		}

@@ -123,15 +123,15 @@ public class CreateTree {
 			honeypotProbabilites.put("1", 0.99);
 		} else if (Utils.REAL_HOST_FEATURES_NUM == 2) {
 
-			realSystemProbabilities.put("00", 0.7);
-			realSystemProbabilities.put("01", 0.1);
-			realSystemProbabilities.put("10", 0.1);
-			realSystemProbabilities.put("11", 0.1);
+			realSystemProbabilities.put("00", 0.25);
+			realSystemProbabilities.put("01", 0.25);
+			realSystemProbabilities.put("10", 0.25);
+			realSystemProbabilities.put("11", 0.25);
 
-			honeypotProbabilites.put("00", 0.7);
-			honeypotProbabilites.put("01", 0.1);
-			honeypotProbabilites.put("10", 0.1);
-			honeypotProbabilites.put("11", 0.1);
+			honeypotProbabilites.put("00", 0.25);
+			honeypotProbabilites.put("01", 0.25);
+			honeypotProbabilites.put("10", 0.25);
+			honeypotProbabilites.put("11", 0.25);
 		} else if (Utils.REAL_HOST_FEATURES_NUM == 3) {
 
 			realSystemProbabilities.put("000", 0.1);
@@ -205,10 +205,10 @@ public class CreateTree {
 			realSystemValues.put("10", 5);
 			realSystemValues.put("11", 5);
 
-			honeypotValues.put("00", 5);
-			honeypotValues.put("01", 5);
-			honeypotValues.put("10", 5);
-			honeypotValues.put("11", 5);
+			honeypotValues.put("00", 3);
+			honeypotValues.put("01", 3);
+			honeypotValues.put("10", 3);
+			honeypotValues.put("11", 3);
 		} else if (Utils.REAL_HOST_FEATURES_NUM == 3) {
 			realSystemValues.put("000", 500);
 			realSystemValues.put("001", 500);
