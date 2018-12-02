@@ -95,15 +95,9 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 	public DoubleOracleLPSolver(Game game, int playerToSolveFor, double tol) {
 		super(game);
 		this.game = game;
-		try {
-			cplex = new IloCplex();
-		} catch (IloException e) {
-			System.out.println("Error SequenceFormLPSolver(): CPLEX setup failed");
-		}
-
 		this.playerToSolveFor = playerToSolveFor;
 		this.playerNotToSolveFor = (playerToSolveFor % 2) + 1;
-
+		initializeRestrictedGameDataStructure();
 		initializeDataStructures();
 
 		try {
@@ -204,9 +198,22 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 		sequenceIdForNodeP1 = new int[game.getNumNodes() + 1];
 		sequenceIdForNodeP2 = new int[game.getNumNodes() + 1];
 		
+	}
+
+	private void initializeRestrictedGameDataStructure() {
+		int numInformationSets = 0;
+		int opponentNumInformationSets = 0;
+
+		if (playerToSolveFor == 1) {
+			numInformationSets = game.getNumInformationSetsPlayer1();
+			opponentNumInformationSets = game.getNumInformationSetsPlayer2();
+		} else {
+			numInformationSets = game.getNumInformationSetsPlayer2();
+			opponentNumInformationSets = game.getNumInformationSetsPlayer1();
+		}
 		restictedInformationSet = new int[3][];
-		restictedInformationSet[1] = new int[numPrimalSequences];
-		restictedInformationSet[2]= new int[numDualSequences];
+		restictedInformationSet[1] = new int[numInformationSets];
+		restictedInformationSet[2]= new int[opponentNumInformationSets];
 		
 
 		restrictedInformationSetIdToActions[1] = (HashMap<String, Integer>[]) new HashMap[numInformationSets + 1];
@@ -225,10 +232,8 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 		actionRestrictionMapping[1] = new int[numPrimalSequences][];
 		actionRestrictionMapping[2] = new int[numDualSequences][];*/
 		
-		
-
 	}
-
+	
 	/**
 	 * Tries to solve the current model. Currently relies on CPLEX to throw an
 	 * exception if no model has been built.
@@ -247,6 +252,8 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 				}
 				valueOfGame = cplex.getObjValue();
 				System.out.println("Defender's utility : " + valueOfGame);
+			}else {
+				System.out.println("Game is not Solveable" );
 			}
 
 		} catch (IloException e) {
@@ -475,6 +482,12 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 	 * @throws IloException
 	 */
 	private void setUpModel(double tol) throws IloException {
+		try {
+			cplex = new IloCplex();
+		} catch (IloException e) {
+			System.out.println("Error SequenceFormLPSolver(): CPLEX setup failed");
+		}
+
 		setCplexParameters(tol);
 		objective = cplex.linearNumExpr();
 		natureConstraints = cplex.linearNumExpr();
@@ -660,7 +673,7 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 			
 			primalConstraints.put(node.getInformationSet(),
 					cplex.addEq(sum, parentSequence, "Primal" + node.getInformationSet()));
-			//System.out.println("Sum : " + sum + " = " + 1);
+			System.out.println("Sum : " + sum + " = " + 1);
 			
 		} else if (node.getPlayer() == playerNotToSolveFor && !opponentVisited.contains(node.getInformationSet())) {
 			opponentVisited.add(node.getInformationSet());
@@ -694,7 +707,7 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 
 			primalConstraints.put(node.getInformationSet(),
 				cplex.addEq(sum,1, "P2" + node.getInformationSet()));
-			//System.out.println("Sum P2: " + sum + " = " + 1);
+			System.out.println("Sum P2: " + sum + " = " + 1);
 			
 		} 
 		
@@ -702,6 +715,9 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 			for (Action action : node.getActions()) {
 
 				if (null != action) {
+
+					if(node.getPlayer() !=0 && !restrictedInformationSetIdToActions[node.getPlayer()][node.getInformationSet()].containsKey(action.getName()))
+						continue;
 					int newPrimalSequence = node.getPlayer() == playerToSolveFor
 							? getSequenceIdForPlayerToSolveFor(node.getInformationSet(), action.getName())
 							: primalSequeceId;
@@ -758,8 +774,7 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 		InitializeDualSequenceMatrix();
 		InitializeDualPayoffMatrix();
 	    System.out.println("***************************************** Equation No 2 ************************************************");
-		
-	    System.out.println("numSequencesP2 : " + numSequencesP2);
+
 	    for (int sequenceId = 1; sequenceId < numSequencesP2; sequenceId += Utils.MAX_NO_ATTACKER_ACTIONS) {
 
 			CreateDualConstraintForSequence(sequenceId);
@@ -904,7 +919,7 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 					//rhs.addTerm(totValue, itt1.value());
 					rhs.addTerm(totValue, strategyVarsBySequenceId[it.key()]);
 				}
-				//System.out.println(rhs);
+				System.out.println(rhs);
 				if(rhs != null)	
 					cplex.addGe(lhs,rhs, "Dual" + tmpIndex);
 			}
@@ -983,11 +998,17 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 
 			
 		}
+		
 		cplex.addMaximize(objective);
 		System.out.println("************************************************ Equation no 1 ***************************");
 		System.out.println("Objective Function : " + objective);
 	}
 
+	public void solveRestrictedGame() throws IloException
+	{
+		initializeDataStructures();
+		setUpModel(1e-6);
+	}
 	
 	public void updateRestrictedGame(int currentNodeId, TObjectDoubleMap<String>[] brSequences,TIntSet visited,
 			TIntSet opponentVisited) throws IloException {
@@ -1010,6 +1031,8 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 				}else if(!restrictedInformationSetIdToActions[node.getPlayer()][node.getInformationSet()].containsKey(action.getName())) {
 						continue;
 				} 
+
+				System.out.println( " Restricted sequences I: " + node.getInformationSet() + " action:"+action.getName());
 					updateRestrictedGame(action.getChildId(),brSequences, visited, opponentVisited);
 			}
 		} else if (node.getPlayer() == playerNotToSolveFor &&  !opponentVisited.contains(node.getInformationSet())) {
@@ -1024,7 +1047,7 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 					}else if(!restrictedInformationSetIdToActions[node.getPlayer()][node.getInformationSet()].containsKey(action.getName())) {
 							continue;
 					}
-					//System.out.println(node.getInformationSet()+ " : " + action.getName());
+					//System.out.println( " Restricted sequences I: " + node.getInformationSet() + " action:"+action.getName());
 					updateRestrictedGame(action.getChildId(),brSequences, visited, opponentVisited);
 			}
 		} 
@@ -1138,15 +1161,19 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 							.getName();
 					try {
 						if (sum > 0) {
-							if (player == 2) {
+							if (!restrictedInformationSetIdToActions[player][informationSetId].containsKey(actionName))
+								profile[player][informationSetId][actionId] = 0;
+							else {
+								if (player == 2) {
 
-								profile[player][informationSetId][actionId] = cplex
-										.getValue(strategyVarsByInfoset[informationSetId].get(actionName))/
-										p2SymmetricActionNumByInformationSet[informationSetId].get(actionName);
-							} else {
-
-								profile[player][informationSetId][actionId] = cplex
-										.getValue(strategyVarsByInfoset[informationSetId].get(actionName));
+									profile[player][informationSetId][actionId] = cplex
+											.getValue(strategyVarsByInfoset[informationSetId].get(actionName))
+											/ p2SymmetricActionNumByInformationSet[informationSetId].get(actionName);
+								} else {
+									System.out.println(informationSetId + " : " + actionName);
+									profile[player][informationSetId][actionId] = cplex
+											.getValue(strategyVarsByInfoset[informationSetId].get(actionName));
+								}
 							}
 						} else {
 							if(player == 2 && isDeafualtAction) {
@@ -1168,8 +1195,8 @@ public class DoubleOracleLPSolver<E> extends ZeroSumGameSolver {
 						}
 						/*
 						System.out.println("I:"+informationSetId+" action:"+
-								 actionName + " : " + profile[player][informationSetId][actionId]);*/
-
+								 actionName + " : " + profile[player][informationSetId][actionId]);
+*/
 						//System.out.println(player + " Sum :" + sum);
 					} catch (IloException e) {
 						e.printStackTrace();

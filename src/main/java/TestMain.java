@@ -33,49 +33,55 @@ public class TestMain {
 		double prevP1Payoff = 0.0;
 		double prevP2Payoff = 0.0;
 		boolean isOnlyDefaultStrategy = true;
-		
-		if(!isOnlyDefaultStrategy) {
-			equilibriumSolver.solveGame();
+
+		int iter = 2;
+
+		while (--iter > 0) {
+			if (!isOnlyDefaultStrategy) {
+				equilibriumSolver.solveGame();
+
+				try {
+					equilibriumSolver.writeStrategyToFile("defenderStrategy.txt");
+				} catch (IloException e) {
+					e.printStackTrace();
+				}
+			}
+
 			isOnlyDefaultStrategy = false;
+			TObjectDoubleMap<String>[] brSequencesMap = new TObjectDoubleMap[3];
+			for (int player = 1; player < 3; player++) {
 
+				double[][] RestricatedEquilibriumStrategy = player == 1 ? equilibriumSolver.getStrategyProfile()[2]
+						: equilibriumSolver.getStrategyProfile()[1];
+				BestResponseLPSolver brSolver = new BestResponseLPSolver(drpGame, player,
+						RestricatedEquilibriumStrategy);
+				brSolver.solveGame();
+				if (player == 1)
+					prevP1Payoff = brSolver.getValueOfGame();
+				else
+					prevP2Payoff = brSolver.getValueOfGame();
+				//System.out.println("Game value" + brSolver.getValueOfGame());
+				brSequencesMap[player] = brSolver.getStrategyVarMap();
+				TObjectDoubleIterator<String> it = brSequencesMap[player].iterator();
+				for (int i = brSequencesMap[player].size(); i-- > 0;) {
+					it.advance();
+					System.out.println("player : " + player + " Key : " + it.key() + " Value :" + it.value());
+				}
+				try {
+					brSolver.writeStrategyToFile("Player-" + player + "-bestResponseStrategy.txt");
+
+				} catch (IloException e) {
+					e.printStackTrace();
+				}
+
+			}
 			try {
-				equilibriumSolver.writeStrategyToFile("defenderStrategy.txt");
+				equilibriumSolver.updateRestrictedGame(0, brSequencesMap, new TIntHashSet(), new TIntHashSet());
+				equilibriumSolver.solveRestrictedGame();
 			} catch (IloException e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}
-		
-
-		TObjectDoubleMap<String>[] brSequencesMap = new TObjectDoubleMap[3];
-		for (int player = 1; player < 3; player++) {
-
-			double[][] RestricatedEquilibriumStrategy = player ==1 ? equilibriumSolver.getStrategyProfile()[2]: equilibriumSolver.getStrategyProfile()[1];
-			BestResponseLPSolver brSolver = new BestResponseLPSolver(drpGame, player, RestricatedEquilibriumStrategy);
-			brSolver.solveGame();
-			if(player == 1)
-				prevP1Payoff =  brSolver.getValueOfGame();
-			else
-				prevP2Payoff = brSolver.getValueOfGame();
-			//System.out.println("Game value" + brSolver.getValueOfGame());
-			 brSequencesMap[player] = brSolver.getStrategyVarMap();
-		TObjectDoubleIterator<String> it = brSequencesMap[player].iterator();
-			for (int i = brSequencesMap[player].size(); i-- > 0;) {
-			   it.advance();
-			   System.out.println(it.key());
-			}
-			try {
-				brSolver.writeStrategyToFile("Player-"+player+"-bestResponseStrategy.txt");
-
-			} catch (IloException e) {
-				e.printStackTrace();
-			}
-
-		}
-		try {
-			equilibriumSolver.updateRestrictedGame(0, brSequencesMap,new TIntHashSet(), new TIntHashSet());
-		} catch (IloException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 
 	}

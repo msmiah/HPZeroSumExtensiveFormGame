@@ -30,7 +30,7 @@ public class CreateTree {
 	private ArrayList<Double> modificationCost;
 
 	private boolean isModifyRealSystem = false;
-	private boolean isModifyBothSystem =  true;
+	private boolean isModifyBothSystem =  false;
 	
 	
 
@@ -128,10 +128,10 @@ public class CreateTree {
 			realSystemProbabilities.put("10", 0.25);
 			realSystemProbabilities.put("11", 0.25);
 
-			honeypotProbabilites.put("00", 0.25);
-			honeypotProbabilites.put("01", 0.25);
-			honeypotProbabilites.put("10", 0.25);
-			honeypotProbabilites.put("11", 0.25);
+			honeypotProbabilites.put("00", 0.3);
+			honeypotProbabilites.put("01", 0.3);
+			honeypotProbabilites.put("10", 0.3);
+			honeypotProbabilites.put("11", 0.1);
 		} else if (Utils.REAL_HOST_FEATURES_NUM == 3) {
 
 			realSystemProbabilities.put("000", 0.1);
