@@ -832,7 +832,8 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 				itt1.advance();
 				itt2.advance();
 				double  totValue = it.value()/itt2.value();
-				lhs.addTerm(totValue, itt1.value());
+				//lhs.addTerm(totValue, itt1.value());
+				lhs.addTerm(totValue, opponentStrategyVarsBySequenceId[tmpIndex]);
 			}
 		}
 		
@@ -844,20 +845,25 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 				TIntDoubleIterator it = dualPayoffMatrix[tmpIndex].iterator();
 				TIntObjectIterator<IloNumVar> itt1 = modelStrategyVars[tmpIndex].iterator();
 				TIntDoubleIterator itt2 = symmetricActionCntInP2InformationSet[tmpIndex].iterator();
+				double totalActionPayoff = 0.0;
 				for (int i = dualPayoffMatrix[tmpIndex].size(); i-- > 0;) {
 					it.advance();
 					itt1.advance();
 					itt2.advance();
+					//System.out.println("Attacker action " + opponentStrategyVarsBySequenceId[tmpIndex]);
 					double  totValue = it.value()/itt2.value();
-					//rhs.addTerm(it.value(), strategyVarsBySequenceId[it.key()]);
-					rhs.addTerm(totValue, itt1.value());
-				}
-				//System.out.println(rhs);
+					totalActionPayoff += totValue;
+					//rhs.addTerm(totValue, strategyVarsBySequenceId[it.key()]);
+					//rhs.addTerm(totValue, itt1.value());
+					//rhs.addTerm(totValue, opponentStrategyVarsBySequenceId[tmpIndex]);
+				} 
+				//System.out.println("RHS :" + rhs);
+				System.out.println("total value : " + totalActionPayoff);
 				if(rhs != null)	
-					cplex.addGe(lhs,rhs, "Dual" + tmpIndex);
+					cplex.addGe(lhs,totalActionPayoff , "Dual" + tmpIndex);
 			}
 		}
-		System.out.println(lhs);
+		System.out.println("LHS" + lhs);
 		
 	
 	}

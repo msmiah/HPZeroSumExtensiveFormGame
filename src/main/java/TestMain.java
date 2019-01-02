@@ -28,7 +28,27 @@ public class TestMain {
 
 		Game drpGame = new Game();
 		drpGame.createGameFromFileZerosumPackageFormat("hsg_4_features.efg");
+		DefenderSequenceFormLPApproximationSolver equilibriumSolver = new DefenderSequenceFormLPApproximationSolver(drpGame, 1);
+		equilibriumSolver.solveGame();
 
+		try {
+			equilibriumSolver.writeStrategyToFile("defenderStrategy.txt");
+		} catch (IloException e) {
+			e.printStackTrace();
+		}
+		
+		
+		double[][] p1Strategy = equilibriumSolver.getStrategyProfile()[1];
+		BestResponseLPSolver brSolver = new BestResponseLPSolver(drpGame, 2,
+				p1Strategy);
+		brSolver.solveGame();
+		try {
+			brSolver.writeStrategyToFile("attacker_br.txt");
+		} catch (IloException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+/*
 		DoubleOracleLPSolver equilibriumSolver = new DoubleOracleLPSolver(drpGame, 1);
 		double prevP1Payoff = 0.0;
 		double prevP2Payoff = 0.0;
@@ -83,7 +103,7 @@ public class TestMain {
 				e.printStackTrace();
 			}
 		}
-
+*/
 	}
 
 }
