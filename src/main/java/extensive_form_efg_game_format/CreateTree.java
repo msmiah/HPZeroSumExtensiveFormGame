@@ -86,39 +86,11 @@ public class CreateTree {
 	
 	/* index 0 used for the cost rihtmost bit of network and so on*/
 	public void setModificationCost() {
-		if (Utils.REAL_HOST_FEATURES_NUM == 1) {
+
 		
-			modificationCost.add(1.0);
-			modificationCost.add(2.0);
-		
-		}else if (Utils.REAL_HOST_FEATURES_NUM == 2) {
-
-			modificationCost.add(1.0);
-			modificationCost.add(1.0);
-			modificationCost.add(2.0);
-			modificationCost.add(2.0 );
-		} else if (Utils.REAL_HOST_FEATURES_NUM == 3) {
-
-			modificationCost.add(1.0);
-			modificationCost.add(1.0);
-			modificationCost.add(1.0);
-
-			modificationCost.add(2.0);
-			modificationCost.add(2.0);
-			modificationCost.add(2.0);
-		} else if (Utils.REAL_HOST_FEATURES_NUM == 4) {
-
-			modificationCost.add(1.0);
-			modificationCost.add(1.0);
-			modificationCost.add(1.0);
-			modificationCost.add(1.0);
-
-			modificationCost.add(2.0);
-			modificationCost.add(2.0);
-			modificationCost.add(2.0);
-			modificationCost.add(2.0);
+			modificationCost.add(1.0); // Real system modification cost
+			modificationCost.add(2.0); // HP modification cost
 		}
-	}
 	
 	public void setProbability() {
 		
@@ -345,7 +317,6 @@ public class CreateTree {
 
 	private void movePlayerOne() {
 		for (int i = 0; i < mChnaceNodeActionList.size(); i++) {
-			//System.out.println("Main " + mChnaceNodeActionList.get(i));
 			ArrayList<String> actions = new ArrayList<>();
 			ArrayList<Integer> flipPositions = new ArrayList<>();
 			actions.add(mChnaceNodeActionList.get(i));
@@ -358,7 +329,7 @@ public class CreateTree {
 				Utils.numOfDefenderActions = Utils.TOTAL_FEATUES_NUMBER_IN_GAME + 1;
 			}else if(isModifyRealSystem) {
 				numberOfFeatures = Utils.TOTAL_FEATUES_NUMBER_IN_GAME;
-				startIndex = Utils.REAL_HOST_FEATURES_NUM;
+				startIndex = Utils.REAL_HOST_FEATURES_NUM*Utils.TOTAL_NUM_OF_REAL_HOST;
 			}else {
 				numberOfFeatures =Utils.REAL_HOST_FEATURES_NUM;
 			}
@@ -368,11 +339,12 @@ public class CreateTree {
 					//continue;
 				int flipFeature = flipBits(infoNo, j);
 				String strFormat = "%"+ (Utils.TOTAL_FEATUES_NUMBER_IN_GAME ) +"s";
-				//System.out.println(strFormat);
 				String flippedStr = String.format(strFormat, Integer.toBinaryString(flipFeature)).replace(' ', '0');
-				//System.out.println(flippedStr);
 				actions.add(flippedStr);
-				flipPositions.add(j);
+				if( j < Utils.REAL_HOST_FEATURES_NUM*Utils.TOTAL_NUM_OF_REAL_HOST)
+					flipPositions.add(0);
+				else
+					flipPositions.add(1);
 			}
 
 			createGambitFile.createPlayerNode(Utils.PLAYER_NODE_NAME, Utils.PLAYER_ONE, infoNo,
@@ -391,12 +363,12 @@ public class CreateTree {
 	private void movePlayerTwo(String playerOneAction,int flipPos, int palyerOneInfoSet, String natureAction) {
 
 		ArrayList<String> actions = new ArrayList<>(); 
-		String realSysStr = playerOneAction.substring(0, Utils.REAL_HOST_FEATURES_NUM);
-		String hpStr = playerOneAction.substring(Utils.REAL_HOST_FEATURES_NUM, Utils.TOTAL_FEATUES_NUMBER_IN_GAME);
-		actions.add(realSysStr);
-		actions.add(hpStr);
-		String p2InfoSet = getP2InofrmationSet(realSysStr+hpStr); // Making same infoset for both real and HP 
-		//System.out.println(p2InfoSet);
+		for (int j = 0; j < playerOneAction.length(); j+= Utils.REAL_HOST_FEATURES_NUM) {
+			String featuresInEachHost = playerOneAction.substring(j, j + Utils.REAL_HOST_FEATURES_NUM);
+			actions.add(featuresInEachHost);
+			
+		}
+		String p2InfoSet = getP2InofrmationSet(playerOneAction); // Making same infoset for both real and HP 
 		int infosetNo = mBinarytoIntNumbers.get(p2InfoSet); // playerOne action was used previously. For creating uncertainity for player2 new information set is used.
 		createGambitFile.createPlayerNode(Utils.PLAYER_NODE_NAME, Utils.PLAYER_TWO, infosetNo, playerOneAction, actions,
 				0);

@@ -858,7 +858,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 					//rhs.addTerm(totValue, opponentStrategyVarsBySequenceId[tmpIndex]);
 				} 
 				//System.out.println("RHS :" + rhs);
-				System.out.println("total value : " + totalActionPayoff);
+				//System.out.println("total value : " + totalActionPayoff);
 				if(rhs != null)	
 					cplex.addGe(lhs,totalActionPayoff , "Dual" + tmpIndex);
 			}

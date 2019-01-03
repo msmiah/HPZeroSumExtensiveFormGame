@@ -363,7 +363,7 @@ public class Game implements GameGenerator {
 			action.name = line[6+i].replace("\"", "");
 			//System.out.println("action name = " + action.name + "info :" + node.informationSet);
 			if(node.player == 1) {
-				action.childId = node.nodeId + (i*3) + 1;
+				action.childId = node.nodeId + (i*(Utils.MAX_NO_ATTACKER_ACTIONS+1)) + 1;
 				//System.out.println("node id : " + node.nodeId + "  child id:" + action.childId);
 			}
 			else {
@@ -488,7 +488,7 @@ public class Game implements GameGenerator {
 		for (int i = 0; i < numActions; i++) {
 			Action action = new Action();
 			action.name = line[((3+i)*2)-1].replace("\"", "");
-			action.childId = i*((3*Utils.numOfDefenderActions)+1) + 1;
+			action.childId = i*(((Utils.MAX_NO_ATTACKER_ACTIONS+1)*Utils.numOfDefenderActions)+1) + 1;
 			//System.out.println(action.name + " child id : " + action.childId);
 			action.probability = Double.parseDouble(line[(3+i)*2]);
 			sum += action.probability;
