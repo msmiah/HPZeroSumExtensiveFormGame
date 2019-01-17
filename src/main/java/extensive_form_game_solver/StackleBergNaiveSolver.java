@@ -28,7 +28,7 @@ import ilog.cplex.IloCplex;
 import ilog.cplex.IloCplex.UnknownObjectException;
 import utils.Utils;
 
-public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSolver {
+public class StackleBergNaiveSolver<E> extends ZeroSumGameSolver {
 	Game game;
 
 	int playerToSolveFor;
@@ -41,20 +41,20 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 	IloNumVar[] dualVars; // indexed as [informationSetId]. Note that we expect information sets to be
 							// 1-indexed, but the code corrects for when this is not the case
 	HashMap<String, IloNumVar>[] strategyVarsByInformationSet; // indexed as [inforationSetId][action.name]
-	HashMap<String, IloNumVar>[] opponentStrategyVarsByInformationSet; // indexed as [inforationSetId][action.name]
-
+	HashMap<String, String>[] opponentStrategyVarsByInformationSet; // indexed as [inforationSetId][action.name]
+	HashMap<String, Boolean> opponentBrStrategy;
 	TIntList[] sequenceFormDualMatrix; // indexed as [dual sequence id][information set]
 	TIntDoubleMap[] sequenceFormDualProbMatrix;
 	TIntDoubleMap[] sequenceFormDualP1Matrix;
 	TIntDoubleMap[] dualPayoffMatrix; // indexed as [dual sequence][primal sequence]
 	TIntDoubleMap[] p1PayoffMatrix;
 	TIntDoubleMap[] symmetricActionCntInP2InformationSet;
-	TIntObjectMap<IloNumVar>[] modelStrategyVars;
+	TIntObjectMap<String>[] modelStrategyVars;
 	TObjectIntMap<String>[] sequenceIdByInformationSetAndActionChance;
 	TObjectIntMap<String>[] sequenceIdByInformationSetAndActionP1; // indexed as [informationSetId][action.name]
 	TObjectIntMap<String>[] sequenceIdByInformationSetAndActionP2; // indexed as [informationSetId][action.name]
 	IloNumVar[] strategyVarsBySequenceId;
-	IloNumVar[] opponentStrategyVarsBySequenceId;
+	String[] opponentStrategyVarsBySequenceId;
 	IloNumVar[] zVarsBySequenceId;
 
 	int[] p2InformationSetBySequenceId;
@@ -80,11 +80,11 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 	int cnt = 0;
 	double[] tempModificationCost = { 1.0, 1.0, 2.0, 2.0, };
 
-	public DefenderSequenceFormLPApproximationSolver(Game game, int playerToSolveFor) {
+	public StackleBergNaiveSolver(Game game, int playerToSolveFor) {
 		this(game, playerToSolveFor, 1e-6);
 	}
 
-	public DefenderSequenceFormLPApproximationSolver(Game game, int playerToSolveFor, double tol) {
+	public StackleBergNaiveSolver(Game game, int playerToSolveFor, double tol) {
 		super(game);
 		this.game = game;
 		try {
@@ -121,14 +121,15 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 			opponentNumInformationSets = game.getNumInformationSetsPlayer1();
 		}
 		this.strategyVarsByInformationSet = (HashMap<String, IloNumVar>[]) new HashMap[numInformationSets + 1];
-		this.opponentStrategyVarsByInformationSet = (HashMap<String, IloNumVar>[]) new HashMap[opponentNumInformationSets
+		this.opponentStrategyVarsByInformationSet = (HashMap<String, String>[]) new HashMap[opponentNumInformationSets
 				+ 1];
+		this.opponentBrStrategy = new HashMap<String, Boolean>();
 		for (int i = 0; i <= numInformationSets; i++) {
 			this.strategyVarsByInformationSet[i] = new HashMap<String, IloNumVar>();
 		}
 
 		for (int i = 0; i <= opponentNumInformationSets; i++) {
-			this.opponentStrategyVarsByInformationSet[i] = new HashMap<String, IloNumVar>();
+			this.opponentStrategyVarsByInformationSet[i] = new HashMap<String, String>();
 
 		}
 		numPrimalSequences = playerToSolveFor == 1 ? game.getNumSequencesP1() : game.getNumSequencesP2();
@@ -179,7 +180,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 
 		if (playerToSolveFor == 1) {
 			strategyVarsBySequenceId = new IloNumVar[game.getNumSequencesP1()];
-			opponentStrategyVarsBySequenceId = new IloNumVar[game.getNumSequencesP2()];
+			opponentStrategyVarsBySequenceId = new String[game.getNumSequencesP2()];
 			zVarsBySequenceId = new IloNumVar[game.getNumSequencesP1()];
 			p2InformationSetBySequenceId = new int[game.getNumSequencesP1()];
 		} else {
@@ -212,7 +213,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 					// System.out.println("Cplex val : " + cplex.getValue(v));
 				}
 				valueOfGame = cplex.getObjValue();
-				System.out.println("Defender's utility : " + valueOfGame);
+				System.out.println("Defender's utility in StackleBerg Game : " + valueOfGame);
 			}
 
 		} catch (IloException e) {
@@ -364,33 +365,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 						fw.write(v.getName() + ": \t" + 0.0 + "\n");
 					else
 						fw.write(v.getName() + ": \t" + cplex.getValue(v) + "\n");
-			}
-			fw.write("...............Attacker's strategy................\n");
-			
-			for (IloNumVar v : opponentStrategyVarsBySequenceId) {
-				if (v != null)
-					//cplex.add(v);
-					//System.out.println(v);
-
-					if (cplex.getValue(v) < 0.00005)
-						fw.write(v.getName() + ": \t" + 0.0 + "\n");
-					else
-						fw.write(v.getName() + ": \t" + cplex.getValue(v) + "\n");
-			}
-			
-			fw.write("............... Z variables................\n");
-			
-			for (IloNumVar v : zVarsBySequenceId) {
-				if (v != null)
-					//cplex.add(v);
-					//System.out.println(v);
-
-					if (cplex.getValue(v) < 0.00005)
-						fw.write(v.getName() + ": \t" + 0.0 + "\n");
-					else
-						fw.write(v.getName() + ": \t" + cplex.getValue(v) + "\n");
-			}
-			
+			}		
 			fw.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -459,7 +434,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 		strategyVarsBySequenceId[0] = rootSequence;
 
 		System.out.println("************************ Equation no 4  ************************************");
-		CreateSequenceFormVariablesAndConstraints(game.getRoot(),0,0, rootSequence, rootSequence, new TIntHashSet(), new TIntHashSet(),
+		CreateSequenceFormVariablesAndConstraints(game.getRoot(),0,0, rootSequence, null, new TIntHashSet(), new TIntHashSet(),
 				1,1);
 
 		CreateDualVariablesAndConstraints();
@@ -531,7 +506,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 	 *            keeps track of which information sets have been visited
 	 * @throws IloException
 	 */
-	private void CreateSequenceFormVariablesAndConstraints(int currentNodeId, int primalSequeceId, int dualSequeceId, IloNumVar parentSequence, IloNumVar childSequence, TIntSet visited,
+	private void CreateSequenceFormVariablesAndConstraints(int currentNodeId, int primalSequeceId, int dualSequeceId, IloNumVar parentSequence, String childSequence, TIntSet visited,
 			TIntSet opponentVisited, double natureProbability, int infoset) throws IloException {
 		Node node = game.getNodeById(currentNodeId);
 		if (null == node)
@@ -540,60 +515,14 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 		if (node.isLeaf()) { // Objective function
 			double value = playerToSolveFor == player1 ? node.getPlayerOneValue() : node.getPlayerTwoValue();
 			
-			//System.out.println(childSequence + " : " + value);
-			/* Linearizing constraints*/
-
-			IloLinearNumExpr lz1 = cplex.linearNumExpr();
-			IloLinearNumExpr lz2 = cplex.linearNumExpr();
-			IloLinearNumExpr lz3 = cplex.linearNumExpr();
-			//IloNumVar z = cplex.numVar(0, 1, parentSequence+" -> "+childSequence);
-			
-			IloNumVar z ;
 			if (modelStrategyVars[dualSequeceId].containsKey(primalSequeceId)) {
-				z = modelStrategyVars[dualSequeceId].get(primalSequeceId);
 				p1PayoffMatrix[dualSequeceId].put(primalSequeceId, (p1PayoffMatrix[dualSequeceId].get(primalSequeceId)+(value*natureProbability)));
 				//System.out.println("Z:" +z );
 			} else {
-				z = cplex.numVar(0, 1, parentSequence +" -> "+ childSequence);
-			    
-			    /*z-A <= 0 upper bound is 1*/
-				lz1.addTerm(1, z);
-				lz1.addTerm(-1, parentSequence);
-				primalConstraints.put(node.getInformationSet(),
-						cplex.addLe(lz1, 0, "TLZ1" + dualSequeceId));
-				
-				/*Z-A+x<=1 */
-				/*
-				lz1.addTerm(1, childSequence);
-				primalConstraints.put(node.getInformationSet(),
-						cplex.addLe(lz1, 1, "TLZ1" + node.getInformationSet()));
-				*/
-				/*z- x <= 0 */
-				lz2.addTerm(1, z);
-				lz2.addTerm(-1, childSequence);
-				primalConstraints.put(node.getInformationSet(),
-						cplex.addLe(lz2, 0, "TLZ2" + dualSequeceId));
-				
-				//System.out.println("lz2: " + lz2);
-				
-				/*A+x-Z <= 1*/
-				lz3.addTerm(-1, z);
-				lz3.addTerm(1, parentSequence);
-				lz3.addTerm(1, childSequence);
-				//System.out.println(lz3);
-				primalConstraints.put(node.getInformationSet(),
-						cplex.addLe(lz3, 1, "TLZ3" + dualSequeceId));
-
-			    modelStrategyVars[dualSequeceId].put(primalSequeceId,z);
 			    p1PayoffMatrix[dualSequeceId].put(primalSequeceId,value*natureProbability);
-			    zVarsBySequenceId[primalSequeceId] = z;
+			    modelStrategyVars[dualSequeceId].put(primalSequeceId,childSequence);
 			}
 			
-			
-		   // System.out.println(parentSequence + "->" + childSequence + " : " +value);
-		    //objective.addTerm(value*natureProbability, z);
-			//System.out.println("********************************* Equation no 1 **************************************");
-			//System.out.println("Objective :" + objective);
 			return;
 		}
 
@@ -611,7 +540,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 				p2InformationSetBySequenceId[sequenceId] = node.getInformationSet();
 				// add 1*v to the sum over all the sequences at the information set
 				sum.addTerm(1, v);
-				natureConstraints.addTerm(1, v);
+				//natureConstraints.addTerm(1, v);
 				CreateSequenceFormVariablesAndConstraints(action.getChildId(),sequenceId, dualSequeceId, v, childSequence, visited, opponentVisited,
 						natureProbability,node.getInformationSet());
 			}
@@ -626,18 +555,16 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 			IloLinearNumExpr sum = cplex.linearNumExpr();
 			for (Action action : node.getActions()) {
 				// real-valued variable in (0,1) 
-				IloNumVar v = null;
+				String v = "";
 				int sequenceId = getSequenceIdForPlayerNotToSolveFor(node.getInformationSet(), action.getName());
 				//System.out.println( action + " Sequecne id : " + sequenceId);
 
 				if (!opponentStrategyVarsByInformationSet[node.getInformationSet()].containsKey(action.getName())) {
-					v = cplex.numVar(0, 1, IloNumVarType.Bool,
-							"I:" + node.getInformationSet() + "  action:" + action.getName());
+					v = "I:" + node.getInformationSet() + "  action:" + action.getName();
 					opponentStrategyVarsByInformationSet[node.getInformationSet()].put(action.getName(), v);
 					opponentStrategyVarsBySequenceId[sequenceId] = v;
 					p2InformationSetBySequenceId[sequenceId] = node.getInformationSet();
 					// add 1*v to the sum over all the sequences at the information set
-					sum.addTerm(1, v);
 					
 				} else {
 				    v = opponentStrategyVarsByInformationSet[node.getInformationSet()].get(action.getName());
@@ -645,10 +572,6 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 				CreateSequenceFormVariablesAndConstraints(action.getChildId(),primalSequeceId, sequenceId, parentSequence, v, visited,
 						opponentVisited, natureProbability,node.getInformationSet());
 			}
-
-			primalConstraints.put(node.getInformationSet(),
-				cplex.addEq(sum,1, "P2" + node.getInformationSet()));
-			//System.out.println("Sum P2: " + sum + " = " + 1);
 			
 		} 
 		
@@ -674,7 +597,7 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 									newNatureProbability,node.getInformationSet());
 						}
 					} else if (node.getPlayer() == playerNotToSolveFor) {
-						IloNumVar v = opponentStrategyVarsByInformationSet[node.getInformationSet()].get(action.getName());
+						String v = opponentStrategyVarsByInformationSet[node.getInformationSet()].get(action.getName());
 						if (null != action) {
 							CreateSequenceFormVariablesAndConstraints(action.getChildId(), newPrimalSequence,newDualSequence, parentSequence, v,visited, opponentVisited,
 									newNatureProbability,node.getInformationSet());
@@ -817,54 +740,34 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 	private void CreateDualConstraintForSequence(int sequenceId) throws IloException {
 		
 
-      //int p2InformationSet = p2InformationSetBySequenceId[sequenceId];
-      //int numOfActionsInInformationSet = opponentStrategyVarsByInformationSet[p2InformationSet].size();
-
-        /* lhs is linear expression of expected payoff in each information set*/
-		IloLinearNumExpr lhs = cplex.linearNumExpr();
+		double expectedValue = - Utils.PLAYER_ONE_MAX_VAL;
+		String actionKey = "";
 		for (int actionNo = 0; actionNo < Utils.MAX_NO_ATTACKER_ACTIONS; actionNo++) {
 			int tmpIndex = sequenceId + actionNo;
-			TIntDoubleIterator it = dualPayoffMatrix[tmpIndex].iterator();
-			TIntObjectIterator<IloNumVar> itt1 = modelStrategyVars[tmpIndex].iterator();
-			TIntDoubleIterator itt2 = symmetricActionCntInP2InformationSet[tmpIndex].iterator();
-			for (int i = dualPayoffMatrix[tmpIndex].size(); i-- > 0;) {
-				it.advance();
-				itt1.advance();
-				itt2.advance();
-				double  totValue = it.value()/itt2.value();
-				lhs.addTerm(totValue, itt1.value());
-				//System.out.println(it.value() +" :" + itt2.value());
-				//lhs.addTerm(totValue, opponentStrategyVarsBySequenceId[tmpIndex]);
-			}
-		}
-		
-		for (int actionNo = 0; actionNo < Utils.MAX_NO_ATTACKER_ACTIONS; actionNo++) {
-			int tmpIndex = sequenceId + actionNo;
-			IloLinearNumExpr rhs  = null;
+			double totalActionPayoff = 0.0;
 			if (dualPayoffMatrix[tmpIndex].size() > 0) {
-				rhs = cplex.linearNumExpr();
 				TIntDoubleIterator it = dualPayoffMatrix[tmpIndex].iterator();
-				TIntObjectIterator<IloNumVar> itt1 = modelStrategyVars[tmpIndex].iterator();
+				TIntObjectIterator<String> itt1 = modelStrategyVars[tmpIndex].iterator();
 				TIntDoubleIterator itt2 = symmetricActionCntInP2InformationSet[tmpIndex].iterator();
-				double totalActionPayoff = 0.0;
 				for (int i = dualPayoffMatrix[tmpIndex].size(); i-- > 0;) {
 					it.advance();
 					itt1.advance();
 					itt2.advance();
-					//System.out.println("Attacker action " + opponentStrategyVarsBySequenceId[tmpIndex]);
 					double  totValue = it.value()/itt2.value();
 					totalActionPayoff += totValue;
-					rhs.addTerm(totValue, strategyVarsBySequenceId[it.key()]);
-					//rhs.addTerm(totValue, itt1.value());
-					//rhs.addTerm(totValue, opponentStrategyVarsBySequenceId[tmpIndex]);
-					//System.out.println(itt1.value() + ": " +it.value() + " : " + itt2.value());
-				} 
-				//System.out.println("RHS :" + rhs);
-				if(rhs != null)	
-					cplex.addGe(lhs,rhs , "Dual" + tmpIndex);
+				
+
+				}
+				//System.out.println(opponentStrategyVarsBySequenceId[tmpIndex] + " : " + totalActionPayoff);
+				if(totalActionPayoff > expectedValue) {
+					expectedValue = totalActionPayoff;
+					actionKey = opponentStrategyVarsBySequenceId[tmpIndex];
+					}
 			}
+			
 		}
-		//System.out.println("LHS" + lhs);
+		opponentBrStrategy.put(actionKey, true);
+		System.out.println("St solver : " + actionKey + " = 1");
 		
 	
 	}
@@ -923,24 +826,27 @@ public class DefenderSequenceFormLPApproximationSolver<E> extends ZeroSumGameSol
 	}
 
 	private void SetObjective() throws IloException {
-		for (int sequenceId = 1; sequenceId < numSequencesP2; sequenceId++) {
+	for (int sequenceId = 1; sequenceId < numSequencesP2; sequenceId++) {
 
 			TIntDoubleIterator it = p1PayoffMatrix[sequenceId].iterator();
-			TIntObjectIterator<IloNumVar> itt1 = modelStrategyVars[sequenceId].iterator();
+			TIntObjectIterator<String> itt1 = modelStrategyVars[sequenceId].iterator();
 			TIntDoubleIterator itt2 = symmetricActionCntInP2InformationSet[sequenceId].iterator();
+
 			for (int i = p1PayoffMatrix[sequenceId].size(); i-- > 0;) {
 				it.advance();
 				itt1.advance();
 				itt2.advance();
-				double totValue = it.value() / itt2.value();
-				objective.addTerm(totValue, itt1.value());
+				double totValue =0.0;
+				if(opponentBrStrategy.containsKey(itt1.value()))
+					totValue = it.value() / itt2.value();
+				objective.addTerm(totValue, strategyVarsBySequenceId[it.key()]);
 			}
 
 			
 		}
 		cplex.addMaximize(objective);
 		System.out.println("************************************************ Equation no 1 ***************************");
-		System.out.println("Objective Function : " + objective);
+		System.out.println("Objective Function  StackelBerg: " + objective);
 	}
 
 	public int getPlayerToSolveFor() {

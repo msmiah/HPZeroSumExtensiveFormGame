@@ -95,22 +95,22 @@ public class CreateTree {
 	public void setProbability() {
 		
 		if (Utils.REAL_HOST_FEATURES_NUM == 1) {
-			realSystemProbabilities.put("0", 0.7);
-			realSystemProbabilities.put("1", 0.2); 
+			realSystemProbabilities.put("0", 1.0);
+			realSystemProbabilities.put("1", 1.0); 
 
-			honeypotProbabilites.put("0", 0.7);
-			honeypotProbabilites.put("1", 0.2);
+			honeypotProbabilites.put("0", 1.0);
+			honeypotProbabilites.put("1", 1.0);
 		} else if (Utils.REAL_HOST_FEATURES_NUM == 2) {
 
-			realSystemProbabilities.put("00", 0.05);
-			realSystemProbabilities.put("01", 0.89);
-			realSystemProbabilities.put("10", 0.01);
-			realSystemProbabilities.put("11", 0.05);
+			realSystemProbabilities.put("00", 0.1);
+			realSystemProbabilities.put("01", 0.1);
+			realSystemProbabilities.put("10", 0.1);
+			realSystemProbabilities.put("11", 0.1);
 
-			honeypotProbabilites.put("00", 0.3);
-			honeypotProbabilites.put("01", 0.1);
-			honeypotProbabilites.put("10", 0.3);
-			honeypotProbabilites.put("11", 0.3);
+			honeypotProbabilites.put("00", 0.9);
+			honeypotProbabilites.put("01", 0.9);
+			honeypotProbabilites.put("10", 0.9);
+			honeypotProbabilites.put("11", 0.9);
 		} else if (Utils.REAL_HOST_FEATURES_NUM == 3) {
 
 			realSystemProbabilities.put("000", 0.1); 
@@ -181,14 +181,14 @@ public class CreateTree {
 		} else if (Utils.REAL_HOST_FEATURES_NUM == 2) {
 
 			realSystemValues.put("00", 5.0);
-			realSystemValues.put("01", 5.); 
-			realSystemValues.put("10", 5.);
-			realSystemValues.put("11", 5.);
+			realSystemValues.put("01", 5.0); 
+			realSystemValues.put("10", 5.0);
+			realSystemValues.put("11", 5.0);
 
-			honeypotValues.put("00", 3.);
-			honeypotValues.put("01", 3.);
-			honeypotValues.put("10", 3.);
-			honeypotValues.put("11", 3.);
+			honeypotValues.put("00", 5.0);
+			honeypotValues.put("01", 5.0);
+			honeypotValues.put("10", 5.0);
+			honeypotValues.put("11", 5.0);
 		} else if (Utils.REAL_HOST_FEATURES_NUM == 3) {
 			realSystemValues.put("000", 500.);
 			realSystemValues.put("001", 500.);
@@ -445,31 +445,6 @@ public void setP2InformationSet(String networkConfig, String infoset , int val) 
 		}
 
 	}
-	/*
-	public void setP2InformationSet() {
-		
-		p2InformationSet.put("0000", "100000");
-		p2InformationSet.put("0001", "100001");
-		p2InformationSet.put("0010", "100010");
-		p2InformationSet.put("0011", "100011");
-		
-
-		p2InformationSet.put("0100", "100001");
-		p2InformationSet.put("0101", "101001");
-		p2InformationSet.put("0110", "101010");
-		p2InformationSet.put("0111", "101011");
-		
-		p2InformationSet.put("1000", "100010");
-		p2InformationSet.put("1001", "101010");
-		p2InformationSet.put("1010", "110010");
-		p2InformationSet.put("1011", "110011");
-		
-		p2InformationSet.put("1100", "100011");
-		p2InformationSet.put("1101", "101011");
-		p2InformationSet.put("1110", "110011");
-		p2InformationSet.put("1111", "111011");
-		
-	}*/
 
 	public int flipBits(int n, int k) {
 		int mask = 1 << k;

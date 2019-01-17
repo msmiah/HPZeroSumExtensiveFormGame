@@ -4,6 +4,7 @@ import extensive_form_game_solver.BestResponseLPSolver;
 import extensive_form_game_solver.CounterFactualRegretSolver;
 import extensive_form_game_solver.DefenderSequenceFormLPApproximationSolver;
 import extensive_form_game_solver.DoubleOracleLPSolver;
+import extensive_form_game_solver.StackleBergNaiveSolver;
 import gnu.trove.iterator.TIntDoubleIterator;
 import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.iterator.TObjectByteIterator;
@@ -29,15 +30,16 @@ public class TestMain {
 		Game drpGame = new Game();
 		drpGame.createGameFromFileZerosumPackageFormat("hsg_4_features.efg");
 		DefenderSequenceFormLPApproximationSolver equilibriumSolver = new DefenderSequenceFormLPApproximationSolver(drpGame, 1);
+		//StackleBergSolver stSolver = new StackleBergSolver<>(drpGame, 1);
 		equilibriumSolver.solveGame();
-
+		//stSolver.solveGame();
 		try {
 			equilibriumSolver.writeStrategyToFile("defenderStrategy.txt");
 		} catch (IloException e) {
 			e.printStackTrace();
 		}
 		
-		
+		/*
 		double[][] p1Strategy = equilibriumSolver.getStrategyProfile()[1];
 		BestResponseLPSolver brSolver = new BestResponseLPSolver(drpGame, 2,
 				p1Strategy);
@@ -48,7 +50,7 @@ public class TestMain {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-/*
+
 		DoubleOracleLPSolver equilibriumSolver = new DoubleOracleLPSolver(drpGame, 1);
 		double prevP1Payoff = 0.0;
 		double prevP2Payoff = 0.0;
